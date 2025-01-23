@@ -1,0 +1,3280 @@
+openapi: 3.0.3
+info:
+  title: HelpHut Food Rescue Management
+  description: >
+    Centralized platform for coordinating food donations, volunteers, and partner organizations.
+    Aligns with the HelpHut mission to efficiently rescue food in Austin, reduce waste, and help those in need.
+    This specification is maintained under a TDD approach, with auto-generated tests ensuring coverage of each endpoint.
+  version: "1.0.0"
+
+servers:
+  - url: https://api.helphut.org/v1
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Users
+    description: Endpoints managing user accounts and roles.
+  - name: Donors
+    description: Endpoints for donor-related operations.
+  - name: Volunteers
+    description: Endpoints for volunteer-related operations.
+  - name: Partners
+    description: Endpoints for partner organization operations.
+  - name: Locations
+    description: Endpoints for location records.
+  - name: FoodTypes
+    description: Endpoints managing food categories.
+  - name: Donations
+    description: Endpoints managing donation events.
+  - name: DonationItems
+    description: Endpoints for items associated with donations.
+  - name: Tickets
+    description: Endpoints for managing rescue tickets.
+  - name: TicketMeta
+    description: Endpoints for ticket tags, attachments, notes.
+  - name: Inventory
+    description: Endpoints for partner inventory items.
+  - name: VolunteerMeta
+    description: Endpoints for volunteer availability, zones, skills.
+  - name: ActivityLogs
+    description: Endpoints for auditing and activity logs.
+  - name: Shifts
+    description: Endpoints for scheduling volunteer shifts.
+
+paths:
+
+  /users:
+    get:
+      tags: [Users]
+      summary: List users
+      operationId: listUsers
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Returns an array of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Users]
+      summary: Create a new user
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreate"
+      responses:
+        "201":
+          description: Created user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Retrieve a user by ID
+      operationId: getUser
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: The user object
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [Users]
+      summary: Update a user by ID
+      operationId: updateUser
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [Users]
+      summary: Delete a user by ID
+      operationId: deleteUser
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "204":
+          description: Deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /donors:
+    get:
+      tags: [Donors]
+      summary: List donors
+      operationId: listDonors
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Returns an array of donors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Donor"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Donors]
+      summary: Create a new donor
+      operationId: createDonor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonorCreate"
+      responses:
+        "201":
+          description: Created donor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donor"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /donors/{id}:
+    get:
+      tags: [Donors]
+      summary: Retrieve a donor by ID
+      operationId: getDonor
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: The donor object
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donor"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [Donors]
+      summary: Update a donor by ID
+      operationId: updateDonor
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonorUpdate"
+      responses:
+        "200":
+          description: Updated donor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donor"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [Donors]
+      summary: Delete a donor by ID
+      operationId: deleteDonor
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "204":
+          description: Deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /donors/{donorId}/donations:
+    get:
+      tags: [Donations]
+      summary: List all donations for a specific donor
+      operationId: listDonationsByDonor
+      parameters:
+        - name: donorId
+          in: path
+          required: true
+          description: UUID of the donor
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Array of donations for this donor
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Donation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Donations]
+      summary: Create a new donation for a specific donor
+      operationId: createDonationForDonor
+      parameters:
+        - name: donorId
+          in: path
+          required: true
+          description: UUID of the donor
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonationCreate"
+      responses:
+        "201":
+          description: Created donation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /volunteers:
+    get:
+      tags: [Volunteers]
+      summary: List volunteers
+      operationId: listVolunteers
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Returns an array of volunteers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Volunteer"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Volunteers]
+      summary: Create a new volunteer
+      operationId: createVolunteer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VolunteerCreate"
+      responses:
+        "201":
+          description: Created volunteer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Volunteer"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /volunteers/{id}:
+    get:
+      tags: [Volunteers]
+      summary: Retrieve a volunteer by ID
+      operationId: getVolunteer
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: The volunteer object
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Volunteer"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [Volunteers]
+      summary: Update a volunteer by ID
+      operationId: updateVolunteer
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VolunteerUpdate"
+      responses:
+        "200":
+          description: Updated volunteer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Volunteer"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [Volunteers]
+      summary: Delete a volunteer by ID
+      operationId: deleteVolunteer
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "204":
+          description: Deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /partners:
+    get:
+      tags: [Partners]
+      summary: List partners
+      operationId: listPartners
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Returns an array of partners
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Partner"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Partners]
+      summary: Create a new partner
+      operationId: createPartner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerCreate"
+      responses:
+        "201":
+          description: Created partner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Partner"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /partners/{id}:
+    get:
+      tags: [Partners]
+      summary: Retrieve a partner by ID
+      operationId: getPartner
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: The partner object
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Partner"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [Partners]
+      summary: Update a partner by ID
+      operationId: updatePartner
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerUpdate"
+      responses:
+        "200":
+          description: Updated partner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Partner"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [Partners]
+      summary: Delete a partner by ID
+      operationId: deletePartner
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "204":
+          description: Deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /locations:
+    get:
+      tags: [Locations]
+      summary: List locations
+      operationId: listLocations
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Returns an array of locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Location"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Locations]
+      summary: Create a new location
+      operationId: createLocation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocationCreate"
+      responses:
+        "201":
+          description: Created location
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Location"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /locations/{id}:
+    get:
+      tags: [Locations]
+      summary: Retrieve a location by ID
+      operationId: getLocation
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: The location object
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Location"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [Locations]
+      summary: Update a location by ID
+      operationId: updateLocation
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocationUpdate"
+      responses:
+        "200":
+          description: Updated location
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Location"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [Locations]
+      summary: Delete a location by ID
+      operationId: deleteLocation
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "204":
+          description: Deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /food-types:
+    get:
+      tags: [FoodTypes]
+      summary: List all food types
+      operationId: listFoodTypes
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Returns an array of food types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FoodType"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [FoodTypes]
+      summary: Create a new food type
+      operationId: createFoodType
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FoodTypeCreate"
+      responses:
+        "201":
+          description: Created food type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodType"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /food-types/{id}:
+    get:
+      tags: [FoodTypes]
+      summary: Retrieve a food type by ID
+      operationId: getFoodType
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: The food type object
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodType"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [FoodTypes]
+      summary: Update a food type by ID
+      operationId: updateFoodType
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FoodTypeUpdate"
+      responses:
+        "200":
+          description: Updated food type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodType"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [FoodTypes]
+      summary: Delete a food type by ID
+      operationId: deleteFoodType
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "204":
+          description: Deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /donations:
+    get:
+      tags: [Donations]
+      summary: List donations
+      operationId: listDonations
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Array of donations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Donation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Donations]
+      summary: Create a new donation
+      operationId: createDonation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonationCreate"
+      responses:
+        "201":
+          description: Created donation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /donations/{id}:
+    get:
+      tags: [Donations]
+      summary: Retrieve a donation by ID
+      operationId: getDonation
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: A donation object
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [Donations]
+      summary: Update a donation by ID
+      operationId: updateDonation
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonationUpdate"
+      responses:
+        "200":
+          description: Updated donation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [Donations]
+      summary: Delete a donation by ID
+      operationId: deleteDonation
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "204":
+          description: Deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /donation-items:
+    get:
+      tags: [DonationItems]
+      summary: List donation items
+      operationId: listDonationItems
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: An array of donation items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DonationItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [DonationItems]
+      summary: Create donation item
+      operationId: createDonationItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonationItemCreate"
+      responses:
+        "201":
+          description: Created donation item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DonationItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /donation-items/{id}:
+    get:
+      tags: [DonationItems]
+      summary: Retrieve a donation item by ID
+      operationId: getDonationItem
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: A donation item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DonationItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [DonationItems]
+      summary: Update a donation item by ID
+      operationId: updateDonationItem
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonationItemUpdate"
+      responses:
+        "200":
+          description: Updated donation item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DonationItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [DonationItems]
+      summary: Delete a donation item by ID
+      operationId: deleteDonationItem
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "204":
+          description: Deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /tickets:
+    get:
+      tags: [Tickets]
+      summary: List tickets
+      operationId: listTickets
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Filter by ticket status
+          schema:
+            $ref: "#/components/schemas/TicketStatus"
+        - name: priority
+          in: query
+          required: false
+          description: Filter by ticket priority
+          schema:
+            $ref: "#/components/schemas/TicketPriority"
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Array of tickets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ticket"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Tickets]
+      summary: Create a new ticket
+      operationId: createTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketCreate"
+      responses:
+        "201":
+          description: Created ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /tickets/{id}:
+    get:
+      tags: [Tickets]
+      summary: Retrieve a ticket by ID
+      operationId: getTicket
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: A ticket object
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [Tickets]
+      summary: Update a ticket by ID
+      operationId: updateTicket
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketUpdate"
+      responses:
+        "200":
+          description: Updated ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [Tickets]
+      summary: Delete a ticket by ID
+      operationId: deleteTicket
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "204":
+          description: Deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /ticket-tags:
+    get:
+      tags: [TicketMeta]
+      summary: List ticket tags
+      operationId: listTicketTags
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Array of ticket tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TicketTag"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [TicketMeta]
+      summary: Create a ticket tag
+      operationId: createTicketTag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketTagCreate"
+      responses:
+        "201":
+          description: Created ticket tag
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketTag"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /ticket-tags/{id}:
+    get:
+      tags: [TicketMeta]
+      summary: Retrieve a ticket tag by ID
+      operationId: getTicketTag
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: A ticket tag object
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketTag"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [TicketMeta]
+      summary: Update a ticket tag by ID
+      operationId: updateTicketTag
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketTagUpdate"
+      responses:
+        "200":
+          description: Updated ticket tag
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketTag"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [TicketMeta]
+      summary: Delete a ticket tag by ID
+      operationId: deleteTicketTag
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "204":
+          description: Deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /ticket-attachments:
+    get:
+      tags: [TicketMeta]
+      summary: List ticket attachments
+      operationId: listTicketAttachments
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Array of ticket attachments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TicketAttachment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [TicketMeta]
+      summary: Create a ticket attachment
+      operationId: createTicketAttachment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketAttachmentCreate"
+      responses:
+        "201":
+          description: Created ticket attachment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketAttachment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /ticket-attachments/{id}:
+    get:
+      tags: [TicketMeta]
+      summary: Retrieve a ticket attachment by ID
+      operationId: getTicketAttachment
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: A ticket attachment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketAttachment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [TicketMeta]
+      summary: Update a ticket attachment by ID
+      operationId: updateTicketAttachment
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketAttachmentUpdate"
+      responses:
+        "200":
+          description: Updated ticket attachment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketAttachment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [TicketMeta]
+      summary: Delete a ticket attachment by ID
+      operationId: deleteTicketAttachment
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "204":
+          description: Deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /ticket-notes:
+    get:
+      tags: [TicketMeta]
+      summary: List ticket notes
+      operationId: listTicketNotes
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Array of ticket notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TicketNote"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [TicketMeta]
+      summary: Create a ticket note
+      operationId: createTicketNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketNoteCreate"
+      responses:
+        "201":
+          description: Created ticket note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketNote"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /ticket-notes/{id}:
+    get:
+      tags: [TicketMeta]
+      summary: Retrieve a ticket note by ID
+      operationId: getTicketNote
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: A ticket note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketNote"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [TicketMeta]
+      summary: Update a ticket note by ID
+      operationId: updateTicketNote
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketNoteUpdate"
+      responses:
+        "200":
+          description: Updated ticket note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketNote"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [TicketMeta]
+      summary: Delete a ticket note by ID
+      operationId: deleteTicketNote
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "204":
+          description: Deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /inventory:
+    get:
+      tags: [Inventory]
+      summary: List inventory items
+      operationId: listInventory
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Array of inventory items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Inventory]
+      summary: Create an inventory item
+      operationId: createInventoryItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryItemCreate"
+      responses:
+        "201":
+          description: Created inventory item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /inventory/{id}:
+    get:
+      tags: [Inventory]
+      summary: Retrieve inventory item by ID
+      operationId: getInventoryItem
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: An inventory item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [Inventory]
+      summary: Update an inventory item by ID
+      operationId: updateInventoryItem
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryItemUpdate"
+      responses:
+        "200":
+          description: Updated inventory item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [Inventory]
+      summary: Delete an inventory item by ID
+      operationId: deleteInventoryItem
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "204":
+          description: Deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /volunteer-availability-zones:
+    get:
+      tags: [VolunteerMeta]
+      summary: List volunteer availability zones
+      operationId: listVolunteerAvailabilityZones
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Array of volunteer availability zones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VolunteerAvailabilityZone"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [VolunteerMeta]
+      summary: Create volunteer availability zone
+      operationId: createVolunteerAvailabilityZone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VolunteerAvailabilityZoneCreate"
+      responses:
+        "201":
+          description: Created volunteer availability zone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolunteerAvailabilityZone"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /volunteer-availability-zones/{id}:
+    get:
+      tags: [VolunteerMeta]
+      summary: Retrieve a volunteer availability zone by ID
+      operationId: getVolunteerAvailabilityZone
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: A volunteer availability zone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolunteerAvailabilityZone"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [VolunteerMeta]
+      summary: Update a volunteer availability zone by ID
+      operationId: updateVolunteerAvailabilityZone
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VolunteerAvailabilityZoneUpdate"
+      responses:
+        "200":
+          description: Updated volunteer availability zone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolunteerAvailabilityZone"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [VolunteerMeta]
+      summary: Delete a volunteer availability zone by ID
+      operationId: deleteVolunteerAvailabilityZone
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "204":
+          description: Deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /volunteer-availability-time:
+    get:
+      tags: [VolunteerMeta]
+      summary: List volunteer availability times
+      operationId: listVolunteerAvailabilityTimes
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Array of volunteer availability time blocks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VolunteerAvailabilityTime"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [VolunteerMeta]
+      summary: Create volunteer availability time
+      operationId: createVolunteerAvailabilityTime
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VolunteerAvailabilityTimeCreate"
+      responses:
+        "201":
+          description: Created volunteer availability time
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolunteerAvailabilityTime"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /volunteer-availability-time/{id}:
+    get:
+      tags: [VolunteerMeta]
+      summary: Retrieve a volunteer availability time by ID
+      operationId: getVolunteerAvailabilityTime
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: A volunteer availability time block
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolunteerAvailabilityTime"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [VolunteerMeta]
+      summary: Update a volunteer availability time by ID
+      operationId: updateVolunteerAvailabilityTime
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VolunteerAvailabilityTimeUpdate"
+      responses:
+        "200":
+          description: Updated volunteer availability time block
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolunteerAvailabilityTime"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [VolunteerMeta]
+      summary: Delete a volunteer availability time by ID
+      operationId: deleteVolunteerAvailabilityTime
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "204":
+          description: Deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /volunteer-skills:
+    get:
+      tags: [VolunteerMeta]
+      summary: List volunteer skills
+      operationId: listVolunteerSkills
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Array of volunteer skills
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VolunteerSkill"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [VolunteerMeta]
+      summary: Create volunteer skill
+      operationId: createVolunteerSkill
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VolunteerSkillCreate"
+      responses:
+        "201":
+          description: Created volunteer skill
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolunteerSkill"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /volunteer-skills/{id}:
+    get:
+      tags: [VolunteerMeta]
+      summary: Retrieve a volunteer skill by ID
+      operationId: getVolunteerSkill
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: A volunteer skill
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolunteerSkill"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [VolunteerMeta]
+      summary: Update a volunteer skill by ID
+      operationId: updateVolunteerSkill
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VolunteerSkillUpdate"
+      responses:
+        "200":
+          description: Updated volunteer skill
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolunteerSkill"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [VolunteerMeta]
+      summary: Delete a volunteer skill by ID
+      operationId: deleteVolunteerSkill
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "204":
+          description: Deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /activity-logs:
+    get:
+      tags: [ActivityLogs]
+      summary: List activity logs
+      operationId: listActivityLogs
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Array of activity logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityLog"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /shifts:
+    get:
+      tags: [Shifts]
+      summary: List shifts
+      operationId: listShifts
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Array of shifts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Shift"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Shifts]
+      summary: Create a shift
+      operationId: createShift
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShiftCreate"
+      responses:
+        "201":
+          description: Created shift
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shift"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /shifts/{id}:
+    get:
+      tags: [Shifts]
+      summary: Retrieve a shift by ID
+      operationId: getShift
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: A shift object
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shift"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [Shifts]
+      summary: Update a shift by ID
+      operationId: updateShift
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShiftUpdate"
+      responses:
+        "200":
+          description: Updated shift
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shift"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [Shifts]
+      summary: Delete a shift by ID
+      operationId: deleteShift
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "204":
+          description: Deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PathUUID:
+      name: id
+      in: path
+      required: true
+      description: UUID of the resource
+      schema:
+        type: string
+        format: uuid
+    LimitParam:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 10
+      description: Maximum number of items to return
+    OffsetParam:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      description: Number of items to skip before starting to collect results
+
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource Not Found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: Bad Request
+        message:
+          type: string
+          example: Detailed error description
+
+    UserRole:
+      type: string
+      enum: [Admin, Donor, Volunteer, Partner]
+    TicketStatus:
+      type: string
+      enum: [Submitted, Scheduled, InTransit, Delivered, Completed]
+    TicketPriority:
+      type: string
+      enum: [Urgent, Routine]
+    InventoryStatus:
+      type: string
+      enum: [Available, Reserved, Distributed]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/UserRole"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UserCreate:
+      type: object
+      required: [email, hashed_password, role]
+      properties:
+        email:
+          type: string
+          format: email
+        hashed_password:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+
+    UserUpdate:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        hashed_password:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+
+    Donor:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        contact_email:
+          type: string
+          format: email
+        contact_phone:
+          type: string
+        business_hours:
+          type: string
+        pickup_preferences:
+          type: string
+        location_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DonorCreate:
+      type: object
+      required: [name, contact_email, contact_phone]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        contact_email:
+          type: string
+          format: email
+        contact_phone:
+          type: string
+        business_hours:
+          type: string
+        pickup_preferences:
+          type: string
+        location_id:
+          type: string
+          format: uuid
+
+    DonorUpdate:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        contact_email:
+          type: string
+          format: email
+        contact_phone:
+          type: string
+        business_hours:
+          type: string
+        pickup_preferences:
+          type: string
+        location_id:
+          type: string
+          format: uuid
+
+    Volunteer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        vehicle_type:
+          type: string
+        location_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    VolunteerCreate:
+      type: object
+      required: [name, email, phone]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        vehicle_type:
+          type: string
+        location_id:
+          type: string
+          format: uuid
+
+    VolunteerUpdate:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        vehicle_type:
+          type: string
+        location_id:
+          type: string
+          format: uuid
+
+    Partner:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        max_capacity:
+          type: integer
+        capacity:
+          type: integer
+        contact_email:
+          type: string
+          format: email
+        contact_phone:
+          type: string
+        location_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PartnerCreate:
+      type: object
+      required: [name, contact_email, contact_phone]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        max_capacity:
+          type: integer
+        capacity:
+          type: integer
+        contact_email:
+          type: string
+          format: email
+        contact_phone:
+          type: string
+        location_id:
+          type: string
+          format: uuid
+
+    PartnerUpdate:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        max_capacity:
+          type: integer
+        capacity:
+          type: integer
+        contact_email:
+          type: string
+          format: email
+        contact_phone:
+          type: string
+        location_id:
+          type: string
+          format: uuid
+
+    Location:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    LocationCreate:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+
+    LocationUpdate:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+
+    FoodType:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    FoodTypeCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+
+    FoodTypeUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+
+    Donation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        donor_id:
+          type: string
+          format: uuid
+        donated_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DonationCreate:
+      type: object
+      properties:
+        donor_id:
+          type: string
+          format: uuid
+
+    DonationUpdate:
+      type: object
+      properties:
+        donor_id:
+          type: string
+          format: uuid
+
+    DonationItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        donation_id:
+          type: string
+          format: uuid
+        food_type_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+        unit:
+          type: string
+        expiration_date:
+          type: string
+          format: date-time
+        storage_requirements:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DonationItemCreate:
+      type: object
+      required: [donation_id, food_type_id]
+      properties:
+        donation_id:
+          type: string
+          format: uuid
+        food_type_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          default: 0
+        unit:
+          type: string
+          default: "lbs"
+        expiration_date:
+          type: string
+          format: date-time
+        storage_requirements:
+          type: string
+
+    DonationItemUpdate:
+      type: object
+      properties:
+        donation_id:
+          type: string
+          format: uuid
+        food_type_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+        unit:
+          type: string
+        expiration_date:
+          type: string
+          format: date-time
+        storage_requirements:
+          type: string
+
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        donation_id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+        priority:
+          $ref: "#/components/schemas/TicketPriority"
+        volunteer_id:
+          type: string
+          format: uuid
+        partner_org_id:
+          type: string
+          format: uuid
+        pickup_location_id:
+          type: string
+          format: uuid
+        dropoff_location_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    TicketCreate:
+      type: object
+      properties:
+        donation_id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+        priority:
+          $ref: "#/components/schemas/TicketPriority"
+        volunteer_id:
+          type: string
+          format: uuid
+        partner_org_id:
+          type: string
+          format: uuid
+        pickup_location_id:
+          type: string
+          format: uuid
+        dropoff_location_id:
+          type: string
+          format: uuid
+
+    TicketUpdate:
+      type: object
+      properties:
+        donation_id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+        priority:
+          $ref: "#/components/schemas/TicketPriority"
+        volunteer_id:
+          type: string
+          format: uuid
+        partner_org_id:
+          type: string
+          format: uuid
+        pickup_location_id:
+          type: string
+          format: uuid
+        dropoff_location_id:
+          type: string
+          format: uuid
+
+    TicketTag:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ticket_id:
+          type: string
+          format: uuid
+        tag:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    TicketTagCreate:
+      type: object
+      required: [ticket_id, tag]
+      properties:
+        ticket_id:
+          type: string
+          format: uuid
+        tag:
+          type: string
+
+    TicketTagUpdate:
+      type: object
+      properties:
+        ticket_id:
+          type: string
+          format: uuid
+        tag:
+          type: string
+
+    TicketAttachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ticket_id:
+          type: string
+          format: uuid
+        attachment:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    TicketAttachmentCreate:
+      type: object
+      required: [ticket_id, attachment]
+      properties:
+        ticket_id:
+          type: string
+          format: uuid
+        attachment:
+          type: string
+
+    TicketAttachmentUpdate:
+      type: object
+      properties:
+        ticket_id:
+          type: string
+          format: uuid
+        attachment:
+          type: string
+
+    TicketNote:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ticket_id:
+          type: string
+          format: uuid
+        note:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    TicketNoteCreate:
+      type: object
+      required: [ticket_id, note]
+      properties:
+        ticket_id:
+          type: string
+          format: uuid
+        note:
+          type: string
+
+    TicketNoteUpdate:
+      type: object
+      properties:
+        ticket_id:
+          type: string
+          format: uuid
+        note:
+          type: string
+
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        donation_item_id:
+          type: string
+          format: uuid
+        food_type_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+        unit:
+          type: string
+        expiration_date:
+          type: string
+          format: date-time
+        partner_org_id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/InventoryStatus"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    InventoryItemCreate:
+      type: object
+      properties:
+        donation_item_id:
+          type: string
+          format: uuid
+        food_type_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          default: 0
+        unit:
+          type: string
+          default: "lbs"
+        expiration_date:
+          type: string
+          format: date-time
+        partner_org_id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/InventoryStatus"
+
+    InventoryItemUpdate:
+      type: object
+      properties:
+        donation_item_id:
+          type: string
+          format: uuid
+        food_type_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+        unit:
+          type: string
+        expiration_date:
+          type: string
+          format: date-time
+        partner_org_id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/InventoryStatus"
+
+    VolunteerAvailabilityZone:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        volunteer_id:
+          type: string
+          format: uuid
+        zone:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    VolunteerAvailabilityZoneCreate:
+      type: object
+      required: [volunteer_id, zone]
+      properties:
+        volunteer_id:
+          type: string
+          format: uuid
+        zone:
+          type: string
+
+    VolunteerAvailabilityZoneUpdate:
+      type: object
+      properties:
+        volunteer_id:
+          type: string
+          format: uuid
+        zone:
+          type: string
+
+    VolunteerAvailabilityTime:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        volunteer_id:
+          type: string
+          format: uuid
+        day_of_week:
+          type: integer
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    VolunteerAvailabilityTimeCreate:
+      type: object
+      required: [volunteer_id, day_of_week, start_time, end_time]
+      properties:
+        volunteer_id:
+          type: string
+          format: uuid
+        day_of_week:
+          type: integer
+          minimum: 0
+          maximum: 6
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+
+    VolunteerAvailabilityTimeUpdate:
+      type: object
+      properties:
+        volunteer_id:
+          type: string
+          format: uuid
+        day_of_week:
+          type: integer
+          minimum: 0
+          maximum: 6
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+
+    VolunteerSkill:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        volunteer_id:
+          type: string
+          format: uuid
+        skill:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    VolunteerSkillCreate:
+      type: object
+      required: [volunteer_id, skill]
+      properties:
+        volunteer_id:
+          type: string
+          format: uuid
+        skill:
+          type: string
+
+    VolunteerSkillUpdate:
+      type: object
+      properties:
+        volunteer_id:
+          type: string
+          format: uuid
+        skill:
+          type: string
+
+    ActivityLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        action:
+          type: string
+        table_name:
+          type: string
+        record_id:
+          type: string
+          format: uuid
+        old_value:
+          type: string
+        new_value:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Shift:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        volunteer_id:
+          type: string
+          format: uuid
+        shift_date:
+          type: string
+          format: date
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ShiftCreate:
+      type: object
+      required: [volunteer_id, shift_date, start_time, end_time]
+      properties:
+        volunteer_id:
+          type: string
+          format: uuid
+        shift_date:
+          type: string
+          format: date
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+
+    ShiftUpdate:
+      type: object
+      properties:
+        volunteer_id:
+          type: string
+          format: uuid
+        shift_date:
+          type: string
+          format: date
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
