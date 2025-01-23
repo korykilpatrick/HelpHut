@@ -125,20 +125,6 @@ graph TD
     C --> D[Breaking Changes]
 ```
 
-## File Organization
-
-### Project Structure
-```
-/src
-  /core          # Core business logic
-  /api           # API routes and handlers
-  /db            # Database models and migrations
-  /services      # Business service layer
-  /types         # TypeScript type definitions
-  /utils         # Shared utilities
-  /tests         # Test files
-```
-
 ### Test Organization
 ```
 /tests
