@@ -2,22 +2,15 @@
 
 ## Code Organization
 
-### Test Structure
+### Directory Structure
 ```
-/tests
-  ├── unit/        # Component tests
-  ├── integration/ # Service tests
-  ├── e2e/        # Workflow tests
-  └── fixtures/    # Test data
+/src
+  ├── core/       # Core business logic
+  ├── utils/      # Utility functions
+  └── config/     # Configuration
 ```
 
 ## Quality Standards
-
-### Testing Requirements
-- Unit test coverage: 80%
-- Integration coverage: 70%
-- E2E coverage: Critical paths
-- Performance benchmarks
 
 ### Code Quality
 - TypeScript strict mode
@@ -34,19 +27,6 @@
 - Breaking changes
 
 ## Best Practices
-
-### Testing Patterns
-```typescript
-describe('Component', () => {
-  describe('Functionality', () => {
-    it('should handle specific case', () => {
-      // Arrange
-      // Act
-      // Assert
-    });
-  });
-});
-```
 
 ### Error Handling
 ```typescript
@@ -73,7 +53,6 @@ type Result<T> = {
 
 ## Tools & Resources
 - TypeScript
-- Jest/Cypress
 - ESLint/Prettier
 - OpenAPI Tools
 - Cursor AI

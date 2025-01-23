@@ -49,26 +49,21 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 // Register routes
-export const server = registerRoutes(app);
-
-// importantly only setup vite in development and after
-// setting up all the other routes so the catch-all route
-// doesn't interfere with the other routes
-if (app.get("env") === "development") {
-  await setupVite(app, server);
-} else {
-  serveStatic(app);
-}
+const server = await registerRoutes(app);
 
 // ALWAYS serve the app on port 3000
 // this serves both the API and the client
 const PORT = 3000;
-server.listen(PORT, "0.0.0.0", () => {
+server.listen(PORT, "0.0.0.0", async () => {
   log("🚀 Server started successfully");
   log(`📡 Environment: ${app.get("env")}`);
   log(`🌐 Server listening at http://localhost:${PORT}`);
+  
+  // Setup Vite after server is listening
   if (app.get("env") === "development") {
-    log("🔧 Running in development mode with hot reloading");
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
   }
 });
 

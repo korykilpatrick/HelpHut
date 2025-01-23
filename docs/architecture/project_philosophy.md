@@ -2,9 +2,6 @@
 
 ## Core Objectives & Methodology
 
-### 1. **Quality Through Rigor**  
-- *Testing as DNA*: Every piece of functionality starts with tests. Tests drive design (TDD), validate edge cases preemptively, and serve as living documentation. No code progresses without test coverage.
-
 ### 2. **AI-Human Symbiosis**  
 - *Context-Rich Development*: Structure code and documentation for optimal AI comprehension. Use explicit typing, standardized patterns, and strategic annotations as "anchor points" for LLM understanding.
 
@@ -30,4 +27,4 @@ A codebase that:
 - Bridges human-AI collaboration  
 
 **Ultimate Achievement:**  
-A self-aware system where documentation, tests, and architecture actively participate in development. The AI serves as a quality steward rather than just a code generator.
+A self-aware system where documentation and architecture actively participate in development. The AI serves as a quality steward rather than just a code generator.

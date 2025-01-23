@@ -7,30 +7,25 @@
 graph TD
     A[Review Requirements] --> B[Update OpenAPI Spec]
     B --> C[Generate Types/Interfaces]
-    C --> D[Write Test Specs]
-    D --> E[Begin Implementation]
+    C --> D[Begin Implementation]
 ```
 
-### 2. Test-Driven Development
+### 2. Development Flow
 ```mermaid
 graph TD
-    A[Write Unit Tests] --> B[Write Integration Tests]
-    B --> C[Implement Feature]
-    C --> D[Verify Coverage]
-    D --> E[Document Changes]
+    A[Implement Feature] --> B[Verify Implementation]
+    B --> C[Document Changes]
 ```
 
 ### 3. Implementation Checklist
 - [ ] OpenAPI spec updated
 - [ ] Types/interfaces defined
-- [ ] Test cases written
 - [ ] Core implementation complete
 - [ ] Error handling verified
 - [ ] Documentation updated
 
 ### 4. Quality Gates
 Each feature must pass:
-- Test coverage ≥ 80%
 - Type safety checks
 - OpenAPI validation
 - Documentation completeness
@@ -59,11 +54,6 @@ REQUIREMENTS:
 1. [Specific requirement]
 2. [Edge cases to handle]
 3. [Performance needs]
-
-TESTS:
-- Unit test scenarios
-- Integration test cases
-- Coverage expectations
 ```
 
 ### Output Format
@@ -76,12 +66,10 @@ ANALYSIS:
 IMPLEMENTATION:
 1. OpenAPI changes
 2. Type definitions
-3. Test implementations
-4. Core feature code
-5. Documentation updates
+3. Core feature code
+4. Documentation updates
 
 VERIFICATION:
-- Test coverage report
 - Type safety checks
 - Performance metrics
 ``` 

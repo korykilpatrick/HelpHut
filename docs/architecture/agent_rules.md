@@ -1,12 +1,11 @@
 # Agent Rules & Workflow
 
 ## Core Principles
-1. Never generate implementation code without corresponding tests
-2. Always maintain documentation synchronization
-3. Follow OpenAPI-first development
-4. Enforce type safety everywhere
-5. Maintain modular architecture
-6. Always get user verification for data model changes
+1. Always maintain documentation synchronization
+2. Follow OpenAPI-first development
+3. Enforce type safety everywhere
+4. Maintain modular architecture
+5. Always get user verification for data model changes
 
 ## Structural Analysis Requirements
 
@@ -54,7 +53,6 @@ Before creating or modifying any code, perform these analytical steps:
      /models
      /services
      /controllers
-     /tests
      /types
    ```
 
@@ -120,25 +118,18 @@ The following changes MUST be approved by the user before proceeding:
 
 ### 1. Pre-Implementation Requirements
 - [ ] Verify OpenAPI spec exists for the feature
-- [ ] Confirm test specifications are defined
 - [ ] Check for existing related components
 - [ ] Validate architectural alignment
 
 ### 2. Implementation Order
-1. Tests First:
-   - [ ] Unit test scaffolding
-   - [ ] Integration test scaffolding
-   - [ ] E2E test scaffolding (if applicable)
-   - [ ] Test implementation with edge cases
-   
-2. Implementation:
+1. Implementation:
    - [ ] Type definitions
    - [ ] Interface definitions
    - [ ] Core logic implementation
    - [ ] Error handling
    - [ ] Integration code
 
-3. Documentation:
+2. Documentation:
    - [ ] Update API documentation
    - [ ] Add implementation notes
    - [ ] Update related component references
@@ -146,7 +137,6 @@ The following changes MUST be approved by the user before proceeding:
 
 ### 3. Quality Gates
 Before completing any implementation:
-- [ ] Test coverage check (>80%)
 - [ ] Type safety verification
 - [ ] Style guide compliance
 - [ ] Performance impact assessment
@@ -157,17 +147,13 @@ Before completing any implementation:
 
 ### New Feature Implementation
 ```template
-1. Test Implementation:
-   [Provide test code]
-   
-2. Core Implementation:
+1. Core Implementation:
    [Provide implementation]
    
-3. Documentation Updates:
+2. Documentation Updates:
    [Provide documentation changes]
    
-4. Quality Verification:
-   - Test Coverage: [percentage]
+3. Quality Verification:
    - Type Safety: [status]
    - Style Compliance: [status]
 ```
@@ -176,15 +162,11 @@ Before completing any implementation:
 ```template
 1. Impact Analysis:
    - Affected Components: [list]
-   - Test Impact: [description]
    
-2. Test Updates:
-   [Provide test modifications]
-   
-3. Implementation Changes:
+2. Implementation Changes:
    [Provide code changes]
    
-4. Documentation Updates:
+3. Documentation Updates:
    [Provide documentation changes]
 ```
 
@@ -197,10 +179,6 @@ Before completing any implementation:
   /architecture  # ADRs and design docs
   /guides        # Implementation guides
 /src
-  /tests
-    /unit
-    /integration
-    /e2e
   /types        # Type definitions
   /interfaces   # Interface definitions
   /core         # Core business logic
@@ -221,7 +199,6 @@ When encountering issues:
 - Purpose and responsibility
 - Interface documentation
 - Usage examples
-- Test coverage report
 - Dependencies
 - Performance considerations
 
@@ -240,13 +217,6 @@ When encountering issues:
 3. Follow SOLID principles
 4. Include performance considerations
 5. Add logging points
-
-### Test Requirements
-1. Happy path
-2. Error cases
-3. Edge cases
-4. Performance tests
-5. Integration scenarios
 
 ## Security Requirements
 - Input validation
