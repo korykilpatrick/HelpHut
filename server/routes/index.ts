@@ -1,12 +1,22 @@
 import { Router } from 'express';
-import { createUsersRouter } from './users';
+import { usersRouter } from './users';
+import { donorsRouter } from './donors';
+import { volunteersRouter } from './volunteers';
+import { partnersRouter } from './partners';
+import { donationsRouter } from './donations';
+import { ticketsRouter } from './tickets';
 
-export const createApiRouter = () => {
+export function createApiRouter() {
   const router = Router();
 
-  // Mount API routes
-  router.use('/users', createUsersRouter());
-  
+  // Mount feature-specific routers
+  router.use('/users', usersRouter);
+  router.use('/donors', donorsRouter);
+  router.use('/volunteers', volunteersRouter);
+  router.use('/partners', partnersRouter);
+  router.use('/donations', donationsRouter);
+  router.use('/tickets', ticketsRouter);
+
   // Error handling middleware
   router.use((err: any, req: any, res: any, next: any) => {
     console.error('API Error:', err);
@@ -19,4 +29,4 @@ export const createApiRouter = () => {
   });
 
   return router;
-}; 
+} 
