@@ -5,9 +5,13 @@ import { volunteersRouter } from './volunteers';
 import { partnersRouter } from './partners';
 import { donationsRouter } from './donations';
 import { ticketsRouter } from './tickets';
+import { caseTransformMiddleware } from '../middleware/case-transform';
 
 export function createApiRouter() {
   const router = Router();
+
+  // Apply case transformation middleware to all API routes
+  router.use(caseTransformMiddleware);
 
   // Mount feature-specific routers
   router.use('/users', usersRouter);

@@ -18,6 +18,7 @@ export const donationSchema = z.object({
   }),
   handlingRequirements: z.object({
     refrigeration: z.boolean(),
+    freezing: z.boolean(),
     fragile: z.boolean(),
     heavyLifting: z.boolean(),
   }),
@@ -102,7 +103,12 @@ export function DonationForm({ onSubmit, isSubmitting = false }: DonationFormPro
           <Checkbox
             label="Requires Refrigeration"
             registration={register('handlingRequirements.refrigeration')}
-            description="This food needs to be kept cold"
+            description="This food needs to be kept cold (35-40°F)"
+          />
+          <Checkbox
+            label="Requires Freezing"
+            registration={register('handlingRequirements.freezing')}
+            description="This food needs to be kept frozen (0°F or below)"
           />
           <Checkbox
             label="Fragile Items"

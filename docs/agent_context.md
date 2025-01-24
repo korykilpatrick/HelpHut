@@ -86,6 +86,115 @@ client/src/
    - Business logic interfaces
    - Service layer types
 
+## Route Development Process
+
+### 1. Type Preparation
+- Import generated types from `lib/api/generated/src/models/`
+- Import database types from `lib/db/types`
+- Define local types using Database namespace:
+  ```typescript
+  type Entity = Database['public']['Tables']['entity_table']['Row'];
+  type EntityCreate = Database['public']['Tables']['entity_table']['Insert'];
+  type EntityUpdate = Database['public']['Tables']['entity_table']['Update'];
+  ```
+
+### 2. Schema Development
+- Create Zod schemas that match generated types
+- Use camelCase for all field names
+- Handle dates with `z.coerce.date()`
+- Common patterns:
+  ```typescript
+  // Create schema
+  const entityCreateSchema = z.object({
+    fieldName: z.string(),
+    dateField: z.coerce.date(),
+    optionalField: z.string().optional()
+  });
+
+  // Update schema (usually partial of create)
+  const entityUpdateSchema = entityCreateSchema.partial();
+  ```
+
+### 3. Route Implementation
+- Use Express Router
+- Apply validateRequest middleware
+- Handle all errors consistently
+- Standard CRUD pattern:
+  ```typescript
+  // GET list
+  router.get('/', async (req, res, next) => {
+    try {
+      const entities = await api.entities.listEntities();
+      res.json({ entities });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // POST create
+  router.post('/', validateRequest({ body: entityCreateSchema }), 
+    async (req, res, next) => {
+    try {
+      const entity = await api.entities.createEntity(req.body);
+      res.status(201).json({ entity });
+    } catch (error) {
+      next(error);
+    }
+  });
+  ```
+
+### 4. Case Transformation Rules
+- Routes receive camelCase from clients
+- Database operations use snake_case
+- Case transformation is automatic via middleware
+- No manual case conversion needed in route handlers
+
+### 5. Validation Rules
+- Always validate request bodies
+- Use Zod schemas for validation
+- Match schema types to generated API types
+- Handle validation errors via middleware
+
+### Common Patterns
+1. **Date Handling**
+   ```typescript
+   // In schema
+   dateField: z.coerce.date()
+   // Automatically handles ISO strings
+   ```
+
+2. **Optional Fields**
+   ```typescript
+   // In schema
+   optionalField: z.string().optional()
+   ```
+
+3. **Enums**
+   ```typescript
+   // Define constants
+   const STATUS = ['Active', 'Inactive'] as const;
+   // In schema
+   status: z.enum(STATUS)
+   ```
+
+4. **Refinements**
+   ```typescript
+   // Add custom validation
+   schema.refine(
+     data => data.startDate < data.endDate,
+     { message: "End date must be after start date" }
+   )
+   ```
+
+### Route Checklist
+- [ ] Import required types (API & DB)
+- [ ] Define local type aliases
+- [ ] Create Zod schemas
+- [ ] Implement CRUD routes
+- [ ] Add validation middleware
+- [ ] Handle errors consistently
+- [ ] Export router
+
 ## Development Principles
 1. **OpenAPI-First Development**
    - All API changes must start with OpenAPI spec updates

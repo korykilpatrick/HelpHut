@@ -145,29 +145,26 @@ CREATE TABLE food_types (
 );
 
 --------------------------------------------------------------------------------
--- Donations Table (tracks each donor-submitted donation event)
+-- Donations Table (simplified to combine donation event and item details)
 --------------------------------------------------------------------------------
 CREATE TABLE donations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   donor_id UUID REFERENCES donors(id) ON UPDATE CASCADE ON DELETE SET NULL,
-  donated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
---------------------------------------------------------------------------------
--- Donation Items Table (links a single donation to multiple food items)
---------------------------------------------------------------------------------
-CREATE TABLE donation_items (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  donation_id UUID REFERENCES donations(id) ON UPDATE CASCADE ON DELETE CASCADE,
   food_type_id UUID REFERENCES food_types(id) ON UPDATE CASCADE ON DELETE SET NULL,
   quantity INT NOT NULL DEFAULT 0 CHECK (quantity >= 0),
   unit TEXT NOT NULL DEFAULT 'lbs',
   expiration_date TIMESTAMPTZ,
   storage_requirements TEXT,
+  requires_refrigeration BOOLEAN NOT NULL DEFAULT false,
+  requires_freezing BOOLEAN NOT NULL DEFAULT false,
+  is_fragile BOOLEAN NOT NULL DEFAULT false,
+  requires_heavy_lifting BOOLEAN NOT NULL DEFAULT false,
+  pickup_window_start TIMESTAMPTZ NOT NULL,
+  pickup_window_end TIMESTAMPTZ NOT NULL,
+  donated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT pickup_window_order CHECK (pickup_window_start < pickup_window_end)
 );
 
 --------------------------------------------------------------------------------
@@ -218,7 +215,7 @@ CREATE TABLE ticket_notes (
 --------------------------------------------------------------------------------
 CREATE TABLE inventory (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  donation_item_id UUID REFERENCES donation_items(id) ON UPDATE CASCADE ON DELETE SET NULL,
+  donation_id UUID REFERENCES donations(id) ON UPDATE CASCADE ON DELETE SET NULL,
   food_type_id UUID REFERENCES food_types(id) ON UPDATE CASCADE ON DELETE SET NULL,
   quantity INT NOT NULL DEFAULT 0 CHECK (quantity >= 0),
   unit TEXT NOT NULL DEFAULT 'lbs',
@@ -370,7 +367,7 @@ BEGIN
     WHERE schemaname = current_schema()
       AND tablename IN (
         'locations','users','donors','volunteers','partners','food_types','donations',
-        'donation_items','tickets','ticket_tags','ticket_attachments','ticket_notes',
+        'tickets','ticket_tags','ticket_attachments','ticket_notes',
         'inventory','volunteer_availability_zones','volunteer_availability_time',
         'volunteer_skills','activity_logs','shifts'
       )
@@ -403,9 +400,9 @@ CREATE INDEX IF NOT EXISTS idx_inventory_status ON inventory (status);
 
 -- Donations
 CREATE INDEX IF NOT EXISTS idx_donations_donor_id ON donations(donor_id);
-
--- Donation Items
-CREATE INDEX IF NOT EXISTS idx_donation_items_donation_id ON donation_items(donation_id);
-CREATE INDEX IF NOT EXISTS idx_donation_items_food_type_id ON donation_items(food_type_id);
+CREATE INDEX IF NOT EXISTS idx_donations_food_type_id ON donations(food_type_id);
+CREATE INDEX IF NOT EXISTS idx_donations_donated_at ON donations(donated_at);
+CREATE INDEX IF NOT EXISTS idx_donations_pickup_window ON donations(pickup_window_start, pickup_window_end);
+CREATE INDEX IF NOT EXISTS idx_donations_handling_reqs ON donations(requires_refrigeration, requires_freezing, requires_heavy_lifting) WHERE requires_refrigeration OR requires_freezing OR requires_heavy_lifting;
 
 -- End of db.sql

@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { IsOptional, IsUUID, IsEnum } from 'class-validator';
-import { validateRequest } from '../middleware/validate.js';
-import { api } from '../../lib/api/impl/index.js';
+import { z } from 'zod';
+import { validateRequest } from '../middleware/validate';
+import { api } from '../../lib/api/impl';
 import type { Database } from '../../lib/db/types';
 
 type Ticket = Database['public']['Tables']['tickets']['Row'];
@@ -16,46 +16,23 @@ const TICKET_PRIORITY = ['Urgent', 'Routine'] as const;
 const router = Router();
 
 // Schema validation
-class CreateTicketDto {
-  @IsOptional()
-  @IsUUID()
-  donation_id?: string;
+const ticketCreateSchema = z.object({
+  donationId: z.string().uuid().optional(),
+  status: z.enum(['Submitted', 'Scheduled', 'InTransit', 'Delivered', 'Completed']).optional(),
+  priority: z.enum(['Urgent', 'Routine']).optional(),
+  volunteerId: z.string().uuid().optional(),
+  partnerOrgId: z.string().uuid().optional(),
+  pickupLocationId: z.string().uuid().optional(),
+  dropoffLocationId: z.string().uuid().optional()
+});
 
-  @IsOptional()
-  @IsEnum(TICKET_STATUS)
-  status?: typeof TICKET_STATUS[number];
-
-  @IsOptional()
-  @IsEnum(TICKET_PRIORITY)
-  priority?: typeof TICKET_PRIORITY[number];
-
-  @IsOptional()
-  @IsUUID()
-  volunteer_id?: string;
-
-  @IsOptional()
-  @IsUUID()
-  partner_org_id?: string;
-
-  @IsOptional()
-  @IsUUID()
-  pickup_location_id?: string;
-
-  @IsOptional()
-  @IsUUID()
-  dropoff_location_id?: string;
-}
-
-class UpdateTicketDto extends CreateTicketDto {}
+// Use same schema for updates
+const ticketUpdateSchema = ticketCreateSchema;
 
 // GET /tickets - List tickets
 router.get('/', async (req, res, next) => {
   try {
-    const { limit = 10, offset = 0 } = req.query;
-    const tickets = await api.tickets.listTickets(
-      limit ? parseInt(limit as string) : undefined,
-      offset ? parseInt(offset as string) : undefined
-    );
+    const tickets = await api.tickets.listTickets();
     res.json({ tickets });
   } catch (error) {
     next(error);
@@ -63,7 +40,7 @@ router.get('/', async (req, res, next) => {
 });
 
 // POST /tickets - Create ticket
-router.post('/', validateRequest({ body: CreateTicketDto }), async (req, res, next) => {
+router.post('/', validateRequest({ body: ticketCreateSchema }), async (req, res, next) => {
   try {
     const ticket = await api.tickets.createTicket(req.body);
     res.status(201).json({ ticket });
@@ -83,7 +60,7 @@ router.get('/:id', async (req, res, next) => {
 });
 
 // PATCH /tickets/:id - Update ticket
-router.patch('/:id', validateRequest({ body: UpdateTicketDto }), async (req, res, next) => {
+router.patch('/:id', validateRequest({ body: ticketUpdateSchema }), async (req, res, next) => {
   try {
     const ticket = await api.tickets.updateTicket(req.params.id, req.body);
     res.json({ ticket });

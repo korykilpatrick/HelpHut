@@ -1,43 +1,39 @@
 import type { Request, Response, NextFunction } from 'express';
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
 import type { ParamsDictionary } from 'express-serve-static-core';
 import type { ParsedQs } from 'qs';
+import { z } from 'zod';
 
 type ValidateSchema = {
-  body?: new (...args: any[]) => any;
-  query?: new (...args: any[]) => any;
-  params?: new (...args: any[]) => any;
+  body?: z.ZodType<any>;
+  query?: z.ZodType<any>;
+  params?: z.ZodType<any>;
 };
 
 export const validateRequest = (schema: ValidateSchema) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (schema.body) {
-        const bodyInstance = plainToInstance(schema.body, req.body as object);
-        const bodyErrors = await validate(bodyInstance);
-        if (bodyErrors.length > 0) {
-          return res.status(400).json({ errors: bodyErrors });
+        const result = schema.body.safeParse(req.body);
+        if (!result.success) {
+          return res.status(400).json({ errors: result.error.issues });
         }
-        req.body = bodyInstance;
+        req.body = result.data;
       }
 
       if (schema.query) {
-        const queryInstance = plainToInstance(schema.query, req.query as ParsedQs);
-        const queryErrors = await validate(queryInstance);
-        if (queryErrors.length > 0) {
-          return res.status(400).json({ errors: queryErrors });
+        const result = schema.query.safeParse(req.query);
+        if (!result.success) {
+          return res.status(400).json({ errors: result.error.issues });
         }
-        req.query = queryInstance as ParsedQs;
+        req.query = result.data as ParsedQs;
       }
 
       if (schema.params) {
-        const paramsInstance = plainToInstance(schema.params, req.params as ParamsDictionary);
-        const paramsErrors = await validate(paramsInstance);
-        if (paramsErrors.length > 0) {
-          return res.status(400).json({ errors: paramsErrors });
+        const result = schema.params.safeParse(req.params);
+        if (!result.success) {
+          return res.status(400).json({ errors: result.error.issues });
         }
-        req.params = paramsInstance as ParamsDictionary;
+        req.params = result.data as ParamsDictionary;
       }
 
       next();

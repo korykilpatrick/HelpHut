@@ -89,13 +89,79 @@ export interface Donation {
      * @type {string}
      * @memberof Donation
      */
-    'id'?: string;
+    'id': string;
     /**
      * 
      * @type {string}
      * @memberof Donation
      */
-    'donor_id'?: string;
+    'donor_id': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Donation
+     */
+    'food_type_id': string;
+    /**
+     * 
+     * @type {number}
+     * @memberof Donation
+     */
+    'quantity': number;
+    /**
+     * 
+     * @type {string}
+     * @memberof Donation
+     */
+    'unit': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Donation
+     */
+    'expiration_date'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Donation
+     */
+    'storage_requirements'?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Donation
+     */
+    'requires_refrigeration'?: boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Donation
+     */
+    'requires_freezing'?: boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Donation
+     */
+    'is_fragile'?: boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Donation
+     */
+    'requires_heavy_lifting'?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof Donation
+     */
+    'pickup_window_start': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Donation
+     */
+    'pickup_window_end': string;
     /**
      * 
      * @type {string}
@@ -126,154 +192,73 @@ export interface DonationCreate {
      * @type {string}
      * @memberof DonationCreate
      */
-    'donor_id'?: string;
-}
-/**
- * 
- * @export
- * @interface DonationItem
- */
-export interface DonationItem {
+    'donor_id': string;
     /**
      * 
      * @type {string}
-     * @memberof DonationItem
-     */
-    'id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof DonationItem
-     */
-    'donation_id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof DonationItem
-     */
-    'food_type_id'?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof DonationItem
-     */
-    'quantity'?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof DonationItem
-     */
-    'unit'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof DonationItem
-     */
-    'expiration_date'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof DonationItem
-     */
-    'storage_requirements'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof DonationItem
-     */
-    'created_at'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof DonationItem
-     */
-    'updated_at'?: string;
-}
-/**
- * 
- * @export
- * @interface DonationItemCreate
- */
-export interface DonationItemCreate {
-    /**
-     * 
-     * @type {string}
-     * @memberof DonationItemCreate
-     */
-    'donation_id': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof DonationItemCreate
+     * @memberof DonationCreate
      */
     'food_type_id': string;
     /**
      * 
      * @type {number}
-     * @memberof DonationItemCreate
+     * @memberof DonationCreate
      */
-    'quantity'?: number;
+    'quantity': number;
     /**
      * 
      * @type {string}
-     * @memberof DonationItemCreate
+     * @memberof DonationCreate
      */
-    'unit'?: string;
+    'unit': string;
     /**
      * 
      * @type {string}
-     * @memberof DonationItemCreate
+     * @memberof DonationCreate
      */
     'expiration_date'?: string;
     /**
      * 
      * @type {string}
-     * @memberof DonationItemCreate
+     * @memberof DonationCreate
      */
     'storage_requirements'?: string;
-}
-/**
- * 
- * @export
- * @interface DonationItemUpdate
- */
-export interface DonationItemUpdate {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof DonationCreate
+     */
+    'requires_refrigeration'?: boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof DonationCreate
+     */
+    'requires_freezing'?: boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof DonationCreate
+     */
+    'is_fragile'?: boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof DonationCreate
+     */
+    'requires_heavy_lifting'?: boolean;
     /**
      * 
      * @type {string}
-     * @memberof DonationItemUpdate
+     * @memberof DonationCreate
      */
-    'donation_id'?: string;
+    'pickup_window_start': string;
     /**
      * 
      * @type {string}
-     * @memberof DonationItemUpdate
+     * @memberof DonationCreate
      */
-    'food_type_id'?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof DonationItemUpdate
-     */
-    'quantity'?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof DonationItemUpdate
-     */
-    'unit'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof DonationItemUpdate
-     */
-    'expiration_date'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof DonationItemUpdate
-     */
-    'storage_requirements'?: string;
+    'pickup_window_end': string;
 }
 /**
  * 
@@ -286,7 +271,67 @@ export interface DonationUpdate {
      * @type {string}
      * @memberof DonationUpdate
      */
-    'donor_id'?: string;
+    'food_type_id'?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof DonationUpdate
+     */
+    'quantity'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof DonationUpdate
+     */
+    'unit'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof DonationUpdate
+     */
+    'expiration_date'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof DonationUpdate
+     */
+    'storage_requirements'?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof DonationUpdate
+     */
+    'requires_refrigeration'?: boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof DonationUpdate
+     */
+    'requires_freezing'?: boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof DonationUpdate
+     */
+    'is_fragile'?: boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof DonationUpdate
+     */
+    'requires_heavy_lifting'?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof DonationUpdate
+     */
+    'pickup_window_start'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof DonationUpdate
+     */
+    'pickup_window_end'?: string;
 }
 /**
  * 
@@ -552,7 +597,7 @@ export interface InventoryItem {
      * @type {string}
      * @memberof InventoryItem
      */
-    'donation_item_id'?: string;
+    'donation_id'?: string;
     /**
      * 
      * @type {string}
@@ -615,7 +660,7 @@ export interface InventoryItemCreate {
      * @type {string}
      * @memberof InventoryItemCreate
      */
-    'donation_item_id'?: string;
+    'donation_id'?: string;
     /**
      * 
      * @type {string}
@@ -666,7 +711,7 @@ export interface InventoryItemUpdate {
      * @type {string}
      * @memberof InventoryItemUpdate
      */
-    'donation_item_id'?: string;
+    'donation_id'?: string;
     /**
      * 
      * @type {string}
@@ -2205,430 +2250,6 @@ export class ActivityLogsApi extends BaseAPI {
      */
     public listActivityLogs(limit?: number, offset?: number, options?: RawAxiosRequestConfig) {
         return ActivityLogsApiFp(this.configuration).listActivityLogs(limit, offset, options).then((request) => request(this.axios, this.basePath));
-    }
-}
-
-
-
-/**
- * DonationItemsApi - axios parameter creator
- * @export
- */
-export const DonationItemsApiAxiosParamCreator = function (configuration?: Configuration) {
-    return {
-        /**
-         * 
-         * @summary Create donation item
-         * @param {DonationItemCreate} donationItemCreate 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createDonationItem: async (donationItemCreate: DonationItemCreate, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'donationItemCreate' is not null or undefined
-            assertParamExists('createDonationItem', 'donationItemCreate', donationItemCreate)
-            const localVarPath = `/donation-items`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(donationItemCreate, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @summary Delete a donation item by ID
-         * @param {string} id UUID of the resource
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        deleteDonationItem: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('deleteDonationItem', 'id', id)
-            const localVarPath = `/donation-items/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @summary Retrieve a donation item by ID
-         * @param {string} id UUID of the resource
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getDonationItem: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('getDonationItem', 'id', id)
-            const localVarPath = `/donation-items/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @summary List donation items
-         * @param {number} [limit] Maximum number of items to return
-         * @param {number} [offset] Number of items to skip before starting to collect results
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        listDonationItems: async (limit?: number, offset?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/donation-items`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            if (limit !== undefined) {
-                localVarQueryParameter['limit'] = limit;
-            }
-
-            if (offset !== undefined) {
-                localVarQueryParameter['offset'] = offset;
-            }
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @summary Update a donation item by ID
-         * @param {string} id UUID of the resource
-         * @param {DonationItemUpdate} donationItemUpdate 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateDonationItem: async (id: string, donationItemUpdate: DonationItemUpdate, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('updateDonationItem', 'id', id)
-            // verify required parameter 'donationItemUpdate' is not null or undefined
-            assertParamExists('updateDonationItem', 'donationItemUpdate', donationItemUpdate)
-            const localVarPath = `/donation-items/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication BearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(donationItemUpdate, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-    }
-};
-
-/**
- * DonationItemsApi - functional programming interface
- * @export
- */
-export const DonationItemsApiFp = function(configuration?: Configuration) {
-    const localVarAxiosParamCreator = DonationItemsApiAxiosParamCreator(configuration)
-    return {
-        /**
-         * 
-         * @summary Create donation item
-         * @param {DonationItemCreate} donationItemCreate 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async createDonationItem(donationItemCreate: DonationItemCreate, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DonationItem>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createDonationItem(donationItemCreate, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DonationItemsApi.createDonationItem']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @summary Delete a donation item by ID
-         * @param {string} id UUID of the resource
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async deleteDonationItem(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteDonationItem(id, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DonationItemsApi.deleteDonationItem']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @summary Retrieve a donation item by ID
-         * @param {string} id UUID of the resource
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getDonationItem(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DonationItem>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getDonationItem(id, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DonationItemsApi.getDonationItem']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @summary List donation items
-         * @param {number} [limit] Maximum number of items to return
-         * @param {number} [offset] Number of items to skip before starting to collect results
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async listDonationItems(limit?: number, offset?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<DonationItem>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.listDonationItems(limit, offset, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DonationItemsApi.listDonationItems']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @summary Update a donation item by ID
-         * @param {string} id UUID of the resource
-         * @param {DonationItemUpdate} donationItemUpdate 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async updateDonationItem(id: string, donationItemUpdate: DonationItemUpdate, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DonationItem>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateDonationItem(id, donationItemUpdate, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DonationItemsApi.updateDonationItem']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-    }
-};
-
-/**
- * DonationItemsApi - factory interface
- * @export
- */
-export const DonationItemsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
-    const localVarFp = DonationItemsApiFp(configuration)
-    return {
-        /**
-         * 
-         * @summary Create donation item
-         * @param {DonationItemCreate} donationItemCreate 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createDonationItem(donationItemCreate: DonationItemCreate, options?: RawAxiosRequestConfig): AxiosPromise<DonationItem> {
-            return localVarFp.createDonationItem(donationItemCreate, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @summary Delete a donation item by ID
-         * @param {string} id UUID of the resource
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        deleteDonationItem(id: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.deleteDonationItem(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @summary Retrieve a donation item by ID
-         * @param {string} id UUID of the resource
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getDonationItem(id: string, options?: RawAxiosRequestConfig): AxiosPromise<DonationItem> {
-            return localVarFp.getDonationItem(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @summary List donation items
-         * @param {number} [limit] Maximum number of items to return
-         * @param {number} [offset] Number of items to skip before starting to collect results
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        listDonationItems(limit?: number, offset?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<DonationItem>> {
-            return localVarFp.listDonationItems(limit, offset, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @summary Update a donation item by ID
-         * @param {string} id UUID of the resource
-         * @param {DonationItemUpdate} donationItemUpdate 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateDonationItem(id: string, donationItemUpdate: DonationItemUpdate, options?: RawAxiosRequestConfig): AxiosPromise<DonationItem> {
-            return localVarFp.updateDonationItem(id, donationItemUpdate, options).then((request) => request(axios, basePath));
-        },
-    };
-};
-
-/**
- * DonationItemsApi - object-oriented interface
- * @export
- * @class DonationItemsApi
- * @extends {BaseAPI}
- */
-export class DonationItemsApi extends BaseAPI {
-    /**
-     * 
-     * @summary Create donation item
-     * @param {DonationItemCreate} donationItemCreate 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DonationItemsApi
-     */
-    public createDonationItem(donationItemCreate: DonationItemCreate, options?: RawAxiosRequestConfig) {
-        return DonationItemsApiFp(this.configuration).createDonationItem(donationItemCreate, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @summary Delete a donation item by ID
-     * @param {string} id UUID of the resource
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DonationItemsApi
-     */
-    public deleteDonationItem(id: string, options?: RawAxiosRequestConfig) {
-        return DonationItemsApiFp(this.configuration).deleteDonationItem(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @summary Retrieve a donation item by ID
-     * @param {string} id UUID of the resource
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DonationItemsApi
-     */
-    public getDonationItem(id: string, options?: RawAxiosRequestConfig) {
-        return DonationItemsApiFp(this.configuration).getDonationItem(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @summary List donation items
-     * @param {number} [limit] Maximum number of items to return
-     * @param {number} [offset] Number of items to skip before starting to collect results
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DonationItemsApi
-     */
-    public listDonationItems(limit?: number, offset?: number, options?: RawAxiosRequestConfig) {
-        return DonationItemsApiFp(this.configuration).listDonationItems(limit, offset, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @summary Update a donation item by ID
-     * @param {string} id UUID of the resource
-     * @param {DonationItemUpdate} donationItemUpdate 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DonationItemsApi
-     */
-    public updateDonationItem(id: string, donationItemUpdate: DonationItemUpdate, options?: RawAxiosRequestConfig) {
-        return DonationItemsApiFp(this.configuration).updateDonationItem(id, donationItemUpdate, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
