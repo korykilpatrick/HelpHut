@@ -8,7 +8,7 @@
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
-    "generate:api": "openapi-generator-cli generate -i docs/planning/openapi.yaml -g typescript-node -o lib/api/generated --additional-properties=supportsES6=true,npmName=@helphut/api",
+    "generate:api": "openapi-generator-cli generate -i docs/planning/openapi.yaml -g typescript-node -o lib/api/generated --additional-properties=supportsES6=true,npmName=@helphut/api,platform=node,useExports=true,stringEnums=true",
     "generate:types": "openapi-generator-cli generate -i docs/planning/openapi.yaml -g typescript-axios -o lib/types/generated --additional-properties=supportsES6=true,npmName=@helphut/types",
     "generate": "npm run generate:api && npm run generate:types"
   },

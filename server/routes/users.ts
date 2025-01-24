@@ -1,40 +1,84 @@
 import { Router } from 'express';
-import { z } from 'zod';
 import { validateRequest } from '../middleware/validate';
-import { api } from '../../lib/api/impl';
-import { UserCreate, UserUpdate, UserRole } from '../../lib/api/generated/model/models';
+import { api } from '../../lib/api/impl/index';
+import type { Database } from '../../lib/db/types';
+
+type User = Database['public']['Tables']['users']['Row'];
+type UserCreate = Database['public']['Tables']['users']['Insert'];
+type UserUpdate = Database['public']['Tables']['users']['Update'];
+type UserRole = Database['public']['Enums']['user_role'];
+
+const USER_ROLES = ['Admin', 'Donor', 'Volunteer', 'Partner'] as const;
 
 const router = Router();
 
-// Schema validation
-const userCreateSchema = z.object({
-  email: z.string().email(),
-  hashedPassword: z.string(),
-  role: z.nativeEnum(UserRole)
-}) satisfies z.ZodType<UserCreate>;
+// Validation schemas
+const validateEmail = (email: string) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
 
-const userUpdateSchema = z.object({
-  email: z.string().email().optional(),
-  hashedPassword: z.string().optional(),
-  role: z.nativeEnum(UserRole).optional()
-}) satisfies z.ZodType<UserUpdate>;
+const validateUserCreate = (data: any): data is UserCreate => {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    typeof data.email === 'string' &&
+    validateEmail(data.email) &&
+    typeof data.hashedPassword === 'string' &&
+    typeof data.role === 'string' &&
+    USER_ROLES.includes(data.role as any)
+  );
+};
 
-// GET /users - List users
-router.get('/', async (req, res, next) => {
+const validateUserUpdate = (data: any): data is UserUpdate => {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    (!('email' in data) || (typeof data.email === 'string' && validateEmail(data.email))) &&
+    (!('hashedPassword' in data) || typeof data.hashedPassword === 'string') &&
+    (!('role' in data) || (typeof data.role === 'string' && USER_ROLES.includes(data.role as any)))
+  );
+};
+
+const validateQuery = (data: any) => {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    (!('limit' in data) || (typeof data.limit === 'string' && !isNaN(parseInt(data.limit)))) &&
+    (!('offset' in data) || (typeof data.offset === 'string' && !isNaN(parseInt(data.offset))))
+  );
+};
+
+// Middleware
+const validateBody = (validator: (data: any) => boolean) => {
+  return (req: any, res: any, next: any) => {
+    if (!validator(req.body)) {
+      return res.status(400).json({ error: 'Invalid request body' });
+    }
+    next();
+  };
+};
+
+const validateQueryParams = (req: any, res: any, next: any) => {
+  if (!validateQuery(req.query)) {
+    return res.status(400).json({ error: 'Invalid query parameters' });
+  }
+  next();
+};
+
+// Routes
+router.get('/', validateQueryParams, async (req, res, next) => {
   try {
-    const { limit = 10, offset = 0 } = req.query;
-    const users = await api.users.listUsers(
-      limit ? parseInt(limit as string) : undefined,
-      offset ? parseInt(offset as string) : undefined
-    );
+    const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit) : 10;
+    const offset = typeof req.query.offset === 'string' ? parseInt(req.query.offset) : 0;
+    const users = await api.users.listUsers(limit, offset);
     res.json({ users });
   } catch (error) {
     next(error);
   }
 });
 
-// POST /users - Create user
-router.post('/', validateRequest({ body: userCreateSchema }), async (req, res, next) => {
+router.post('/', validateBody(validateUserCreate), async (req, res, next) => {
   try {
     const user = await api.users.createUser(req.body);
     res.status(201).json({ user });
@@ -43,27 +87,30 @@ router.post('/', validateRequest({ body: userCreateSchema }), async (req, res, n
   }
 });
 
-// GET /users/:id - Get user by ID
 router.get('/:id', async (req, res, next) => {
   try {
     const user = await api.users.getUser(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
     res.json({ user });
   } catch (error) {
     next(error);
   }
 });
 
-// PATCH /users/:id - Update user
-router.patch('/:id', validateRequest({ body: userUpdateSchema }), async (req, res, next) => {
+router.patch('/:id', validateBody(validateUserUpdate), async (req, res, next) => {
   try {
     const user = await api.users.updateUser(req.params.id, req.body);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
     res.json({ user });
   } catch (error) {
     next(error);
   }
 });
 
-// DELETE /users/:id - Delete user
 router.delete('/:id', async (req, res, next) => {
   try {
     await api.users.deleteUser(req.params.id);

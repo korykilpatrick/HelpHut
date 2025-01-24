@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequest } from '../middleware/validate';
 import { api } from '../../lib/api/impl';
-import { DonorCreate, DonorUpdate } from '../../lib/api/generated/model/models';
+import type { DonorCreate, DonorUpdate } from '../../lib/api/generated/api';
 
 const router = Router();
 

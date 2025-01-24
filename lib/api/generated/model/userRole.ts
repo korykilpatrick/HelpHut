@@ -10,11 +10,9 @@
  * Do not edit the class manually.
  */
 
-import { RequestFile } from './models';
-
 export enum UserRole {
-    Admin = <any> 'Admin',
-    Donor = <any> 'Donor',
-    Volunteer = <any> 'Volunteer',
-    Partner = <any> 'Partner'
+    Admin = 'Admin',
+    Donor = 'Donor',
+    Volunteer = 'Volunteer',
+    Partner = 'Partner'
 }

@@ -1,34 +1,48 @@
-import { Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
+import type { Request, Response, NextFunction } from 'express';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import type { ParamsDictionary } from 'express-serve-static-core';
+import type { ParsedQs } from 'qs';
 
-interface ValidationSchema {
-  body?: z.ZodType<any>;
-  query?: z.ZodType<any>;
-  params?: z.ZodType<any>;
-}
+type ValidateSchema = {
+  body?: new (...args: any[]) => any;
+  query?: new (...args: any[]) => any;
+  params?: new (...args: any[]) => any;
+};
 
-export function validateRequest(schema: ValidationSchema) {
+export const validateRequest = (schema: ValidateSchema) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (schema.body) {
-        req.body = await schema.body.parseAsync(req.body);
+        const bodyInstance = plainToInstance(schema.body, req.body as object);
+        const bodyErrors = await validate(bodyInstance);
+        if (bodyErrors.length > 0) {
+          return res.status(400).json({ errors: bodyErrors });
+        }
+        req.body = bodyInstance;
       }
+
       if (schema.query) {
-        req.query = await schema.query.parseAsync(req.query);
+        const queryInstance = plainToInstance(schema.query, req.query as ParsedQs);
+        const queryErrors = await validate(queryInstance);
+        if (queryErrors.length > 0) {
+          return res.status(400).json({ errors: queryErrors });
+        }
+        req.query = queryInstance as ParsedQs;
       }
+
       if (schema.params) {
-        req.params = await schema.params.parseAsync(req.params);
+        const paramsInstance = plainToInstance(schema.params, req.params as ParamsDictionary);
+        const paramsErrors = await validate(paramsInstance);
+        if (paramsErrors.length > 0) {
+          return res.status(400).json({ errors: paramsErrors });
+        }
+        req.params = paramsInstance as ParamsDictionary;
       }
+
       next();
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({
-          error: 'Validation failed',
-          details: error.errors
-        });
-      } else {
-        next(error);
-      }
+      next(error);
     }
   };
-} 
+}; 

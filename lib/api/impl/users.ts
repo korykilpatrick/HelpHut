@@ -1,5 +1,9 @@
-import { BaseApiImpl } from './base';
-import { User, UserCreate, UserUpdate } from '../generated/model/models';
+import { BaseApiImpl } from './base.js';
+import type { Database } from '../../db/types';
+
+type User = Database['public']['Tables']['users']['Row'];
+type UserCreate = Database['public']['Tables']['users']['Insert'];
+type UserUpdate = Database['public']['Tables']['users']['Update'];
 
 export class UsersApiImpl extends BaseApiImpl {
   async listUsers(limit?: number, offset?: number): Promise<User[]> {

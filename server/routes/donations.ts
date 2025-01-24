@@ -2,17 +2,17 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequest } from '../middleware/validate';
 import { api } from '../../lib/api/impl';
-import { DonationCreate, DonationUpdate } from '../../lib/api/generated/model/models';
+import type { DonationCreate, DonationUpdate } from '../../lib/api/generated/api';
 
 const router = Router();
 
 // Schema validation
 const donationItemSchema = z.object({
-  foodType: z.string(),
+  food_type_id: z.string(),
   quantity: z.number(),
-  unit: z.enum(['LBS', 'KG', 'ITEMS', 'BOXES']),
-  expirationDate: z.string().optional(),
-  temperature: z.enum(['ROOM', 'REFRIGERATED', 'FROZEN']),
+  unit: z.string(),
+  expiration_date: z.string().optional(),
+  storage_requirements: z.string().optional(),
   notes: z.string().optional()
 });
 

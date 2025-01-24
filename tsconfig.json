@@ -1,28 +1,35 @@
 {
-  "include": ["src", "lib", "server"],
-  "exclude": ["node_modules", "build", "dist"],
   "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
+    "incremental": true,
     "noEmit": true,
-    "jsx": "react-jsx",
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["esnext", "dom", "dom.iterable"],
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "outDir": "dist",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
       "@lib/*": ["lib/*"],
       "@server/*": ["server/*"]
-    }
+    },
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "jsx": "preserve"
   },
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["server/**/*", "lib/**/*"],
+  "exclude": ["node_modules", "build", "dist"],
+  "paths": {
+    "@lib/*": ["./lib/*"],
+    "@server/*": ["./server/*"],
+    "@db/*": ["./lib/db/*"],
+    "@db": ["./lib/db/supabase.ts"]
+  },
+  "ts-node": {
+    "esm": true
+  }
 }
