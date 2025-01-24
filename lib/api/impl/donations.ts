@@ -1,5 +1,6 @@
 import { BaseApiImpl } from './base';
 import type { Donation, DonationCreate, DonationUpdate } from '../generated/src/models';
+import { toSnakeCase } from '../../utils/case-transform';
 
 // Custom error classes for donation-specific errors
 export class DonationNotFoundError extends Error {
@@ -78,9 +79,13 @@ export class DonationsApiImpl extends BaseApiImpl {
         throw new DonationValidationError(`Food type with ID ${donation.foodTypeId} not found`);
       }
 
+      // Transform to snake_case before sending to Supabase
+      const snakeCaseDonation = toSnakeCase(donation);
+      console.log('Sending to Supabase:', snakeCaseDonation);
+
       const { data, error } = await this.db
         .from('donations')
-        .insert(donation)
+        .insert(snakeCaseDonation)
         .select()
         .single();
 

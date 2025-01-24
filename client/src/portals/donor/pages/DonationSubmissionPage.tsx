@@ -32,19 +32,20 @@ export function DonationSubmissionPage() {
     try {
       setIsSubmitting(true);
       
-      // Transform form data to API format
+      // Transform form data to API format using camelCase
       const donationData = {
-        donor_id: user.organizationId, // Now we know this exists
-        food_type_id: data.foodType,
+        donorId: user.organizationId,
+        foodTypeId: data.foodType,
         quantity: data.quantity.amount,
         unit: data.quantity.unit,
-        requires_refrigeration: data.handlingRequirements.refrigeration,
-        requires_freezing: data.handlingRequirements.freezing,
-        is_fragile: data.handlingRequirements.fragile,
-        requires_heavy_lifting: data.handlingRequirements.heavyLifting,
-        pickup_window_start: data.pickupWindow.startTime,
-        pickup_window_end: data.pickupWindow.endTime,
-        notes: data.notes
+        requiresRefrigeration: data.handlingRequirements.refrigeration,
+        requiresFreezing: data.handlingRequirements.freezing,
+        isFragile: data.handlingRequirements.fragile,
+        requiresHeavyLifting: data.handlingRequirements.heavyLifting,
+        // Ensure complete ISO datetime strings with timezone
+        pickupWindowStart: new Date(data.pickupWindow.startTime).toISOString(),
+        pickupWindowEnd: new Date(data.pickupWindow.endTime).toISOString(),
+        notes: data.notes || ''
       };
 
       console.log('Submitting donation:', donationData);

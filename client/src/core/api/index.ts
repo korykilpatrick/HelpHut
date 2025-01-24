@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { SignupData } from '@/portals/auth/types';
+import { toCamelCase, toSnakeCase } from '../../../../lib/utils/case-transform';
 
 // Create axios instance with default config
 const axiosInstance = axios.create({
@@ -9,9 +10,27 @@ const axiosInstance = axios.create({
   },
 });
 
-// Add response interceptor for error handling
+// Add request interceptor for case transformation
+axiosInstance.interceptors.request.use(
+  (config) => {
+    if (config.data && typeof config.data === 'object') {
+      config.data = toSnakeCase(config.data);
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for error handling and case transformation
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.data && typeof response.data === 'object') {
+      response.data = toCamelCase(response.data);
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       // Clear auth state on unauthorized
@@ -37,6 +56,9 @@ export const api = {
     createDonation: (data: any) => 
       axiosInstance.post('/donations', data),
     // Add other donation endpoints as needed
+  },
+  foodTypes: {
+    list: () => axiosInstance.get('/food-types'),
   },
 } as const;
 

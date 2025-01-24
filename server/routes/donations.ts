@@ -8,22 +8,36 @@ import { DonationNotFoundError, DonationValidationError, DonationConflictError }
 
 const router = Router();
 
+// Helper for validating ISO datetime strings
+const isoDatetime = z.string().refine(
+  (value) => {
+    try {
+      const date = new Date(value);
+      return date.toISOString() === value;
+    } catch {
+      return false;
+    }
+  },
+  { message: "Must be a valid ISO datetime string" }
+);
+
 // Schema validation
 const donationCreateSchema = z.object({
   donorId: z.string().uuid(),
   foodTypeId: z.string().uuid(),
   quantity: z.number().min(0),
   unit: z.string(),
-  expirationDate: z.coerce.date().optional(),
+  expirationDate: isoDatetime.optional(),
   storageRequirements: z.string().optional(),
   requiresRefrigeration: z.boolean().default(false),
   requiresFreezing: z.boolean().default(false),
   isFragile: z.boolean().default(false),
   requiresHeavyLifting: z.boolean().default(false),
-  pickupWindowStart: z.coerce.date(),
-  pickupWindowEnd: z.coerce.date()
+  pickupWindowStart: isoDatetime,
+  pickupWindowEnd: isoDatetime,
+  notes: z.string().optional()
 }).refine(
-  data => data.pickupWindowStart < data.pickupWindowEnd,
+  data => new Date(data.pickupWindowStart) < new Date(data.pickupWindowEnd),
   { message: "Pickup window end time must be after start time" }
 );
 
@@ -31,17 +45,18 @@ const donationUpdateSchema = z.object({
   foodTypeId: z.string().uuid().optional(),
   quantity: z.number().min(0).optional(),
   unit: z.string().optional(),
-  expirationDate: z.coerce.date().optional(),
+  expirationDate: isoDatetime.optional(),
   storageRequirements: z.string().optional(),
   requiresRefrigeration: z.boolean().optional(),
   requiresFreezing: z.boolean().optional(),
   isFragile: z.boolean().optional(),
   requiresHeavyLifting: z.boolean().optional(),
-  pickupWindowStart: z.coerce.date().optional(),
-  pickupWindowEnd: z.coerce.date().optional()
+  pickupWindowStart: isoDatetime.optional(),
+  pickupWindowEnd: isoDatetime.optional(),
+  notes: z.string().optional()
 }).refine(
   data => !data.pickupWindowStart || !data.pickupWindowEnd || 
-          data.pickupWindowStart < data.pickupWindowEnd,
+          new Date(data.pickupWindowStart) < new Date(data.pickupWindowEnd),
   { message: "Pickup window end time must be after start time" }
 );
 

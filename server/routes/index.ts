@@ -5,6 +5,7 @@ import { volunteersRouter } from './volunteers';
 import { partnersRouter } from './partners';
 import { donationsRouter } from './donations';
 import { ticketsRouter } from './tickets';
+import { foodTypesRouter } from './food-types';
 import authRouter from './auth';
 import { caseTransformMiddleware } from '../middleware/case-transform';
 
@@ -24,6 +25,7 @@ export function createApiRouter() {
   router.use('/partners', partnersRouter);
   router.use('/donations', donationsRouter);
   router.use('/tickets', ticketsRouter);
+  router.use('/food-types', foodTypesRouter);
 
   // Error handling middleware
   router.use((err: any, req: any, res: any, next: any) => {

@@ -8,10 +8,11 @@ import { Textarea } from '@/shared/components/inputs/Textarea';
 import { Checkbox } from '@/shared/components/inputs/Checkbox';
 import { Button } from '@/shared/components/buttons/Button';
 import { FormSection } from '@/shared/components/forms/FormSection';
+import { api } from '@/core/api';
 
 // Form validation schema
 export const donationSchema = z.object({
-  foodType: z.string().min(1, 'Food type is required'),
+  foodType: z.string().uuid('Invalid food type selected'),
   quantity: z.object({
     amount: z.number().min(1, 'Quantity must be at least 1'),
     unit: z.string().min(1, 'Unit is required'),
@@ -37,15 +38,6 @@ interface DonationFormProps {
   isSubmitting?: boolean;
 }
 
-const foodTypeOptions = [
-  { value: '', label: 'Select food type' },
-  { value: 'prepared', label: 'Prepared Food' },
-  { value: 'produce', label: 'Fresh Produce' },
-  { value: 'pantry', label: 'Pantry Items' },
-  { value: 'baked', label: 'Baked Goods' },
-  { value: 'other', label: 'Other' },
-];
-
 const unitOptions = [
   { value: '', label: 'Select unit' },
   { value: 'lbs', label: 'Pounds' },
@@ -55,6 +47,38 @@ const unitOptions = [
 ];
 
 export function DonationForm({ onSubmit, isSubmitting = false }: DonationFormProps) {
+  const [foodTypes, setFoodTypes] = React.useState<Array<{ id: string; name: string }>>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchFoodTypes = async () => {
+      try {
+        console.log('Fetching food types...');
+        const response = await api.foodTypes.list();
+        console.log('Food types response:', response.data);
+        setFoodTypes(response.data.foodTypes || []);
+      } catch (error) {
+        console.error('Error fetching food types:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFoodTypes();
+  }, []);
+
+  const foodTypeOptions = React.useMemo(() => {
+    const options = [
+      { value: '', label: 'Select food type' },
+      ...foodTypes.map(type => ({
+        value: type.id,
+        label: type.name,
+      })),
+    ];
+    console.log('Food type options:', options);
+    return options;
+  }, [foodTypes]);
+
   const {
     register,
     handleSubmit,
@@ -62,6 +86,12 @@ export function DonationForm({ onSubmit, isSubmitting = false }: DonationFormPro
   } = useForm<DonationFormData>({
     resolver: zodResolver(donationSchema),
   });
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center p-4">
+      <div className="text-gray-600">Loading food types...</div>
+    </div>;
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

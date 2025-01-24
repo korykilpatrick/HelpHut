@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import type { ParamsDictionary } from 'express-serve-static-core';
 import type { ParsedQs } from 'qs';
 import { z } from 'zod';
+import { toCamelCase } from '../../lib/utils/case-transform';
 
 type ValidateSchema = {
   body?: z.ZodType<any>;
@@ -13,11 +14,19 @@ export const validateRequest = (schema: ValidateSchema) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (schema.body) {
-        const result = schema.body.safeParse(req.body);
+        console.log('Original request body:', req.body);
+        
+        // Transform to camelCase before validation
+        const camelCaseBody = toCamelCase(req.body);
+        console.log('Transformed to camelCase:', camelCaseBody);
+        
+        const result = schema.body.safeParse(camelCaseBody);
         if (!result.success) {
+          console.error('Validation failed:', result.error.issues);
           return res.status(400).json({ errors: result.error.issues });
         }
         req.body = result.data;
+        console.log('Validation passed, final body:', result.data);
       }
 
       if (schema.query) {
@@ -38,6 +47,7 @@ export const validateRequest = (schema: ValidateSchema) => {
 
       next();
     } catch (error) {
+      console.error('Unexpected validation error:', error);
       next(error);
     }
   };
