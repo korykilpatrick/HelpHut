@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { supabaseAuth } from '../../lib/db/supabase.js';
+import { supabaseAuth, supabase } from '../../lib/db/supabase.js';
 
 const router = Router();
 
@@ -9,29 +9,102 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Password validation: minimum 6 characters
 const PASSWORD_MIN_LENGTH = 6;
 
+// Valid user roles
+const USER_ROLES = ['Admin', 'Donor', 'Volunteer', 'Partner'] as const;
+type UserRole = typeof USER_ROLES[number];
+
 // Login with email and password
 router.post('/login', async (req, res) => {
+  console.log('Received login request:', {
+    ...req.body,
+    password: '[REDACTED]'
+  });
+
   const { email, password } = req.body;
   
   if (!email || !password) {
+    console.log('Missing required fields:', { email: !!email, password: !!password });
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
   try {
+    console.log('Attempting Supabase auth login...');
     const { data, error } = await supabaseAuth.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase auth error:', error);
+      throw error;
+    }
+    console.log('Auth successful for user:', { id: data.user.id, email: data.user.email });
 
-    // Ensure we're sending back the complete session data
-    return res.json({
-      user: data.user,
-      session: {
-        token: data.session?.access_token,
-        ...data.session
+    // Get additional user data
+    console.log('Fetching user profile...');
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', data.user.id)
+      .single();
+
+    if (userError) {
+      console.error('Error fetching user profile:', userError);
+      throw userError;
+    }
+    console.log('User profile fetched:', { id: userData.id, role: userData.role });
+
+    // Get organization data based on role
+    let orgData;
+    if (userData.role === 'Donor') {
+      console.log('Fetching donor organization data...');
+      const { data: donorData, error: donorError } = await supabase
+        .from('donors')
+        .select('*')
+        .eq('user_id', userData.id)
+        .single();
+      if (donorError) {
+        console.error('Error fetching donor data:', donorError);
+        throw donorError;
       }
+      orgData = donorData;
+      console.log('Donor data fetched:', { id: donorData.id, organization: donorData.organization_name });
+    } else if (userData.role === 'Volunteer') {
+      console.log('Fetching volunteer data...');
+      const { data: volunteerData, error: volunteerError } = await supabase
+        .from('volunteers')
+        .select('*')
+        .eq('user_id', userData.id)
+        .single();
+      if (volunteerError) {
+        console.error('Error fetching volunteer data:', volunteerError);
+        throw volunteerError;
+      }
+      orgData = volunteerData;
+      console.log('Volunteer data fetched:', { id: volunteerData.id });
+    } else if (userData.role === 'Partner') {
+      console.log('Fetching partner organization data...');
+      const { data: partnerData, error: partnerError } = await supabase
+        .from('partners')
+        .select('*')
+        .eq('user_id', userData.id)
+        .single();
+      if (partnerError) {
+        console.error('Error fetching partner data:', partnerError);
+        throw partnerError;
+      }
+      orgData = partnerData;
+      console.log('Partner data fetched:', { id: partnerData.id, name: partnerData.name });
+    }
+
+    console.log('Login completed successfully');
+    return res.json({
+      user: {
+        ...data.user,
+        ...userData,
+        organization: orgData
+      },
+      session: data.session
     });
   } catch (error: any) {
     console.error('Login error:', error);
@@ -41,53 +114,165 @@ router.post('/login', async (req, res) => {
 
 // Sign up with email and password
 router.post('/signup', async (req, res) => {
-  const { email, password } = req.body;
+  console.log('Received signup request:', {
+    ...req.body,
+    password: '[REDACTED]'
+  });
+
+  const { email, password, role: rawRole, name, organization_name } = req.body;
   
-  // Validate required fields
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
+  // Validate and normalize role
+  const role = (rawRole as string).charAt(0).toUpperCase() + (rawRole as string).slice(1).toLowerCase();
+  console.log('Normalized role:', role);
+
+  if (!USER_ROLES.includes(role as UserRole)) {
+    console.log('Invalid role:', role);
+    return res.status(400).json({ error: 'Invalid role' });
+  }
+
+  // Validate required fields based on role
+  if (!email || !password || !role || !name) {
+    console.log('Missing required fields:', { email: !!email, password: !!password, role: !!role, name: !!name });
+    return res.status(400).json({ error: 'Email, password, role, and name are required' });
+  }
+
+  if (role === 'Donor' && !organization_name) {
+    console.log('Missing organization name for donor');
+    return res.status(400).json({ error: 'Organization name is required for donors' });
   }
 
   // Validate email format
   if (!EMAIL_REGEX.test(email)) {
+    console.log('Invalid email format:', email);
     return res.status(400).json({ error: 'Invalid email format' });
   }
 
   // Validate password length
   if (password.length < PASSWORD_MIN_LENGTH) {
+    console.log('Password too short');
     return res.status(400).json({ 
       error: `Password must be at least ${PASSWORD_MIN_LENGTH} characters long` 
     });
   }
 
   try {
-    const { data, error } = await supabaseAuth.auth.signUp({
+    // Create Supabase auth user with metadata
+    console.log('Creating Supabase auth user...', {
+      email,
+      metadata: {
+        name,
+        role
+      }
+    });
+    const { data: authData, error: authError } = await supabaseAuth.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${process.env.APP_URL || 'http://localhost:3000'}/auth/callback`,
         data: {
-          email_confirmed: false,
+          name, // This will become display_name via trigger
+          role
         }
       }
     });
 
-    if (error) {
-      console.error('Signup error:', error);
-      throw error;
-    }
-
-    // If no session is returned, email confirmation is required
-    if (!data.session) {
-      return res.json({
-        message: 'Please check your email for confirmation link',
-        user: data.user,
+    if (authError) {
+      console.error('Supabase auth error:', {
+        message: authError.message,
+        status: authError.status,
+        name: authError.name,
+        details: authError
       });
+      throw authError;
+    }
+    if (!authData.user) {
+      console.error('No user returned from Supabase auth');
+      throw new Error('Failed to create user');
+    }
+    console.log('Auth user created:', { 
+      id: authData.user.id, 
+      email: authData.user.email,
+      metadata: authData.user.user_metadata 
+    });
+
+    // Wait for the user record to be created by the trigger
+    console.log('Waiting for user profile to be created by trigger...', {
+      userId: authData.user.id
+    });
+    let userData;
+    let attempts = 0;
+    const maxAttempts = 5;
+    
+    while (attempts < maxAttempts) {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+      
+      if (error) {
+        console.log(`Attempt ${attempts + 1} error:`, error);
+      }
+      
+      if (data) {
+        userData = data;
+        console.log('User profile found:', { 
+          id: userData.id, 
+          role: userData.role,
+          display_name: userData.display_name 
+        });
+        break;
+      }
+      
+      console.log(`User profile not found yet, attempt ${attempts + 1} of ${maxAttempts}`, {
+        lastError: error
+      });
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      attempts++;
     }
 
+    if (!userData) {
+      console.error('User profile was not created in time', {
+        userId: authData.user.id,
+        attempts,
+        metadata: authData.user.user_metadata
+      });
+      await supabaseAuth.auth.admin.deleteUser(authData.user.id);
+      throw new Error('Failed to create user profile');
+    }
+
+    // Create role-specific record
+    let organizationData;
+    if (role === 'Donor') {
+      console.log('Creating donor record...');
+      const { data: donorData, error: donorError } = await supabase
+        .from('donors')
+        .insert({
+          user_id: userData.id, // Use userData.id instead of authData.user.id
+          organization_name,
+          phone: '0000000000' // TODO: Add phone to signup form
+        })
+        .select()
+        .single();
+      
+      if (donorError) {
+        console.error('Donor record creation error:', donorError);
+        // Clean up auth user if donor creation fails
+        await supabaseAuth.auth.admin.deleteUser(authData.user.id);
+        throw donorError;
+      }
+      organizationData = donorData;
+      console.log('Donor record created:', { id: donorData.id });
+    }
+
+    console.log('Signup completed successfully');
     return res.json({
-      user: data.user,
-      session: data.session,
+      message: 'Account created successfully',
+      user: {
+        ...authData.user,
+        ...userData,
+        organization: organizationData
+      },
+      session: authData.session
     });
   } catch (error: any) {
     console.error('Signup error:', error);
@@ -108,7 +293,36 @@ router.get('/session', async (req, res) => {
       return res.status(401).json({ error: 'No active session' });
     }
 
-    return res.json({ session });
+    // Get additional user data
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', session.user.id)
+      .single();
+
+    if (userError) throw userError;
+
+    // Get organization data based on role
+    let orgData;
+    if (userData.role === 'Donor') {
+      const { data: donorData, error: donorError } = await supabase
+        .from('donors')
+        .select('*')
+        .eq('user_id', userData.id)
+        .single();
+      if (donorError) throw donorError;
+      orgData = donorData;
+    }
+    // Add similar blocks for other roles
+
+    return res.json({ 
+      session,
+      user: {
+        ...session.user,
+        ...userData,
+        organization: orgData
+      }
+    });
   } catch (error: any) {
     console.error('Session error:', error);
     return res.status(400).json({ error: error.message });

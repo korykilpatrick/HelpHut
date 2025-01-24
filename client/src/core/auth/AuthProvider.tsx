@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import type { AuthUser, AuthState } from './types';
+import axios from 'axios';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
@@ -9,60 +10,82 @@ interface AuthContextType extends AuthState {
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
+const PUBLIC_PATHS = ['/login', '/signup', '/forgot-password'];
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [authState, setAuthState] = useState<AuthState>(() => {
-    // Try to restore auth state from localStorage
-    const savedAuth = localStorage.getItem('auth');
-    if (savedAuth) {
-      try {
-        const parsed = JSON.parse(savedAuth);
-        return {
-          user: parsed.user,
-          isLoading: false
-        };
-      } catch (e) {
-        localStorage.removeItem('auth');
-      }
-    }
-    return {
-      user: null,
-      isLoading: false,
-    };
+  const [authState, setAuthState] = useState<AuthState>({
+    user: null,
+    isLoading: true,
   });
 
-  // Persist auth state changes
+  // Check for existing session on mount
   useEffect(() => {
-    if (authState.user) {
-      localStorage.setItem('auth', JSON.stringify({ user: authState.user }));
-    } else {
-      localStorage.removeItem('auth');
-    }
-  }, [authState.user]);
+    const checkSession = async () => {
+      try {
+        const savedAuth = localStorage.getItem('auth');
+        if (savedAuth) {
+          const { token } = JSON.parse(savedAuth);
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          
+          const response = await axios.get('/api/v1/auth/session');
+          const { user } = response.data;
+          
+          setAuthState({
+            user: {
+              id: user.id,
+              email: user.email,
+              role: user.role.toLowerCase(),
+              name: user.name || user.email,
+              organizationId: user.organization_id
+            },
+            isLoading: false
+          });
+        } else {
+          setAuthState({ user: null, isLoading: false });
+        }
+      } catch (error) {
+        localStorage.removeItem('auth');
+        delete axios.defaults.headers.common['Authorization'];
+        setAuthState({ user: null, isLoading: false });
+      }
+    };
+
+    checkSession();
+  }, []);
 
   // Handle navigation based on auth state
   useEffect(() => {
-    if (authState.user) {
-      if (location.pathname === '/login') {
+    if (!authState.isLoading) {
+      if (!authState.user && !PUBLIC_PATHS.includes(location.pathname)) {
+        navigate('/login', { replace: true });
+      } else if (authState.user && PUBLIC_PATHS.includes(location.pathname)) {
         navigate('/', { replace: true });
       }
-    } else if (location.pathname !== '/login') {
-      navigate('/login', { replace: true });
     }
-  }, [authState.user, location.pathname, navigate]);
+  }, [authState.user, authState.isLoading, location.pathname, navigate]);
 
   const login = async (email: string, password: string) => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
     try {
-      // TODO: Implement actual login logic
-      const mockUser: AuthUser = {
-        id: '1',
-        email,
-        role: 'donor',
-        name: 'Test User',
-      };
-      setAuthState({ user: mockUser, isLoading: false });
+      const response = await axios.post('/api/v1/auth/login', { email, password });
+      const { user, session } = response.data;
+      
+      // Store the session token
+      localStorage.setItem('auth', JSON.stringify({ token: session.token }));
+      axios.defaults.headers.common['Authorization'] = `Bearer ${session.token}`;
+      
+      setAuthState({ 
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role.toLowerCase(),
+          name: user.name || email,
+          organizationId: user.organization_id
+        }, 
+        isLoading: false 
+      });
     } catch (error) {
       setAuthState({ user: null, isLoading: false, error: 'Login failed' });
       throw error;
@@ -72,6 +95,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
     try {
+      await axios.post('/api/v1/auth/logout');
+      delete axios.defaults.headers.common['Authorization'];
       localStorage.removeItem('auth');
       setAuthState({ user: null, isLoading: false });
       navigate('/login', { replace: true });

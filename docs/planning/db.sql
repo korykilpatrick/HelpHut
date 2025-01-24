@@ -1,6 +1,21 @@
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+-- Grant necessary permissions
+GRANT USAGE ON SCHEMA auth TO postgres, authenticated, anon;
+GRANT ALL ON ALL TABLES IN SCHEMA auth TO postgres;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA auth TO postgres;
+GRANT ALL ON ALL ROUTINES IN SCHEMA auth TO postgres;
+
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Ensure public schema permissions
+GRANT USAGE ON SCHEMA public TO postgres, authenticated, anon;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres;
+
 --------------------------------------------------------------------------------
 -- Drop existing tables in correct dependency order
 --------------------------------------------------------------------------------
@@ -76,26 +91,114 @@ CREATE TABLE locations (
 );
 
 --------------------------------------------------------------------------------
--- Users (centralized authentication and roles)
+-- Users (application profiles linked to Supabase Auth)
 --------------------------------------------------------------------------------
 CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT NOT NULL UNIQUE CHECK (email ~* '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$'),
-  password_hash TEXT NOT NULL,
+  id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
+  display_name TEXT NOT NULL,
   role user_role NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Enable RLS and create policies
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+-- Allow the postgres role (used by triggers) to manage users
+ALTER TABLE users FORCE ROW LEVEL SECURITY;
+GRANT ALL ON users TO postgres;
+GRANT USAGE ON SCHEMA public TO postgres;
+
+-- Allow trigger function to create users
+CREATE POLICY "Trigger can create users" 
+  ON users FOR INSERT 
+  WITH CHECK (true);
+
+-- Allow users to view their own profile
+CREATE POLICY "Users can view own profile" 
+  ON users FOR SELECT 
+  USING (auth.uid() = id);
+
+-- Allow users to update their own profile
+CREATE POLICY "Users can update own profile" 
+  ON users FOR UPDATE 
+  USING (auth.uid() = id);
+
+-- Create trigger function with enhanced logging and permissions
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER 
+SECURITY DEFINER -- Run as definer (postgres) rather than caller
+SET search_path = public -- Ensure we use public schema
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  role_val text;
+  display_name_val text;
+BEGIN
+  -- Log start of function
+  RAISE LOG 'handle_new_user starting for user %', NEW.id;
+  
+  -- Extract and validate role
+  role_val := COALESCE(NEW.raw_user_meta_data->>'role', 'Donor');
+  RAISE LOG 'Extracted role: %', role_val;
+  
+  IF role_val NOT IN ('Admin', 'Donor', 'Volunteer', 'Partner') THEN
+    RAISE LOG 'Invalid role % for user %', role_val, NEW.id;
+    RAISE EXCEPTION 'Invalid role: %', role_val;
+  END IF;
+
+  -- Get display name from metadata or fallback to email
+  display_name_val := COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1));
+  RAISE LOG 'Using display name: % for user %', display_name_val, NEW.id;
+
+  -- Create user profile with explicit schema reference
+  INSERT INTO public.users (id, display_name, role)
+  VALUES (
+    NEW.id,
+    display_name_val,
+    role_val::user_role
+  );
+
+  -- Log successful creation
+  RAISE LOG 'Successfully created user profile for % with role % and display_name %', 
+    NEW.id, role_val, display_name_val;
+
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  -- Enhanced error logging
+  RAISE LOG 'Error in handle_new_user trigger for user %: % (SQLSTATE: %)', 
+    NEW.id, SQLERRM, SQLSTATE;
+  RETURN NULL;
+END;
+$$;
+
+-- Drop existing trigger if it exists
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+-- Create trigger with enhanced logging
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_new_user();
+
+-- Grant execute permission on the trigger function
+GRANT EXECUTE ON FUNCTION public.handle_new_user() TO postgres, authenticated, anon;
+
+-- Ensure RLS is enabled but postgres can bypass
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users FORCE ROW LEVEL SECURITY;
+
+-- Allow postgres role to bypass RLS
+ALTER TABLE users OWNER TO postgres;
+
 --------------------------------------------------------------------------------
--- Donors Table
+-- Donors Table (organization profile for donor users)
 --------------------------------------------------------------------------------
 CREATE TABLE donors (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID UNIQUE REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL,
-  name TEXT NOT NULL,
-  contact_email TEXT NOT NULL CHECK (contact_email ~* '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$'),
-  contact_phone TEXT NOT NULL CHECK (contact_phone ~* '^[0-9+\\-\\(\\)\\s]{7,}$'),
+  organization_name TEXT NOT NULL,
+  phone TEXT NOT NULL CHECK (phone ~* '^[0-9+\\-\\(\\)\\s]{7,}$'),
   business_hours TEXT,
   pickup_preferences TEXT,
   location_id UUID REFERENCES locations(id) ON UPDATE CASCADE ON DELETE SET NULL,
@@ -104,13 +207,11 @@ CREATE TABLE donors (
 );
 
 --------------------------------------------------------------------------------
--- Volunteers Table
+-- Volunteers Table (volunteer profile)
 --------------------------------------------------------------------------------
 CREATE TABLE volunteers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID UNIQUE REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL,
-  name TEXT NOT NULL,
-  email TEXT NOT NULL CHECK (email ~* '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$'),
   phone TEXT NOT NULL CHECK (phone ~* '^[0-9+\\-\\(\\)\\s]{7,}$'),
   vehicle_type TEXT,
   location_id UUID REFERENCES locations(id) ON UPDATE CASCADE ON DELETE SET NULL,

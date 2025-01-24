@@ -75,77 +75,59 @@ export type Database = {
           },
         ]
       }
-      donation_items: {
+      donations: {
         Row: {
           created_at: string
-          donation_id: string | null
+          donated_at: string
+          donor_id: string | null
           expiration_date: string | null
           food_type_id: string | null
           id: string
+          is_fragile: boolean
+          pickup_window_end: string
+          pickup_window_start: string
           quantity: number
+          requires_freezing: boolean
+          requires_heavy_lifting: boolean
+          requires_refrigeration: boolean
           storage_requirements: string | null
           unit: string
           updated_at: string
         }
         Insert: {
           created_at?: string
-          donation_id?: string | null
+          donated_at?: string
+          donor_id?: string | null
           expiration_date?: string | null
           food_type_id?: string | null
           id?: string
+          is_fragile?: boolean
+          pickup_window_end: string
+          pickup_window_start: string
           quantity?: number
+          requires_freezing?: boolean
+          requires_heavy_lifting?: boolean
+          requires_refrigeration?: boolean
           storage_requirements?: string | null
           unit?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
-          donation_id?: string | null
+          donated_at?: string
+          donor_id?: string | null
           expiration_date?: string | null
           food_type_id?: string | null
           id?: string
+          is_fragile?: boolean
+          pickup_window_end?: string
+          pickup_window_start?: string
           quantity?: number
+          requires_freezing?: boolean
+          requires_heavy_lifting?: boolean
+          requires_refrigeration?: boolean
           storage_requirements?: string | null
           unit?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "donation_items_donation_id_fkey"
-            columns: ["donation_id"]
-            isOneToOne: false
-            referencedRelation: "donations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "donation_items_food_type_id_fkey"
-            columns: ["food_type_id"]
-            isOneToOne: false
-            referencedRelation: "food_types"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      donations: {
-        Row: {
-          created_at: string
-          donated_at: string
-          donor_id: string | null
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          donated_at?: string
-          donor_id?: string | null
-          id?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          donated_at?: string
-          donor_id?: string | null
-          id?: string
           updated_at?: string
         }
         Relationships: [
@@ -156,41 +138,45 @@ export type Database = {
             referencedRelation: "donors"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "donations_food_type_id_fkey"
+            columns: ["food_type_id"]
+            isOneToOne: false
+            referencedRelation: "food_types"
+            referencedColumns: ["id"]
+          },
         ]
       }
       donors: {
         Row: {
           business_hours: string | null
-          contact_email: string
-          contact_phone: string
           created_at: string
           id: string
           location_id: string | null
-          name: string
+          organization_name: string
+          phone: string
           pickup_preferences: string | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
           business_hours?: string | null
-          contact_email: string
-          contact_phone: string
           created_at?: string
           id?: string
           location_id?: string | null
-          name: string
+          organization_name: string
+          phone: string
           pickup_preferences?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
           business_hours?: string | null
-          contact_email?: string
-          contact_phone?: string
           created_at?: string
           id?: string
           location_id?: string | null
-          name?: string
+          organization_name?: string
+          phone?: string
           pickup_preferences?: string | null
           updated_at?: string
           user_id?: string | null
@@ -236,7 +222,7 @@ export type Database = {
       inventory: {
         Row: {
           created_at: string
-          donation_item_id: string | null
+          donation_id: string | null
           expiration_date: string | null
           food_type_id: string | null
           id: string
@@ -248,7 +234,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          donation_item_id?: string | null
+          donation_id?: string | null
           expiration_date?: string | null
           food_type_id?: string | null
           id?: string
@@ -260,7 +246,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          donation_item_id?: string | null
+          donation_id?: string | null
           expiration_date?: string | null
           food_type_id?: string | null
           id?: string
@@ -272,10 +258,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "inventory_donation_item_id_fkey"
-            columns: ["donation_item_id"]
+            foreignKeyName: "inventory_donation_id_fkey"
+            columns: ["donation_id"]
             isOneToOne: false
-            referencedRelation: "donation_items"
+            referencedRelation: "donations"
             referencedColumns: ["id"]
           },
           {
@@ -596,25 +582,22 @@ export type Database = {
       users: {
         Row: {
           created_at: string
-          email: string
+          display_name: string
           id: string
-          password_hash: string
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
         Insert: {
           created_at?: string
-          email: string
-          id?: string
-          password_hash: string
+          display_name: string
+          id: string
           role: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
         Update: {
           created_at?: string
-          email?: string
+          display_name?: string
           id?: string
-          password_hash?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
@@ -725,10 +708,8 @@ export type Database = {
       volunteers: {
         Row: {
           created_at: string
-          email: string
           id: string
           location_id: string | null
-          name: string
           phone: string
           updated_at: string
           user_id: string | null
@@ -736,10 +717,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          email: string
           id?: string
           location_id?: string | null
-          name: string
           phone: string
           updated_at?: string
           user_id?: string | null
@@ -747,10 +726,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          email?: string
           id?: string
           location_id?: string | null
-          name?: string
           phone?: string
           updated_at?: string
           user_id?: string | null
@@ -806,7 +783,7 @@ export type Tables<
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
         Database[PublicTableNameOrOptions["schema"]]["Views"])
-    : never = never
+    : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
       Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
@@ -815,14 +792,14 @@ export type Tables<
     ? R
     : never
   : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
-      PublicSchema["Views"])
-  ? (PublicSchema["Tables"] &
-      PublicSchema["Views"])[PublicTableNameOrOptions] extends {
-      Row: infer R
-    }
-    ? R
+        PublicSchema["Views"])
+    ? (PublicSchema["Tables"] &
+        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
     : never
-  : never
 
 export type TablesInsert<
   PublicTableNameOrOptions extends
@@ -830,7 +807,7 @@ export type TablesInsert<
     | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
-    : never = never
+    : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
@@ -838,12 +815,12 @@ export type TablesInsert<
     ? I
     : never
   : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-  ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
-      Insert: infer I
-    }
-    ? I
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
     : never
-  : never
 
 export type TablesUpdate<
   PublicTableNameOrOptions extends
@@ -851,7 +828,7 @@ export type TablesUpdate<
     | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
-    : never = never
+    : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
@@ -859,12 +836,12 @@ export type TablesUpdate<
     ? U
     : never
   : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-  ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
-      Update: infer U
-    }
-    ? U
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
     : never
-  : never
 
 export type Enums<
   PublicEnumNameOrOptions extends
@@ -872,12 +849,12 @@ export type Enums<
     | { schema: keyof Database },
   EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
-    : never = never
+    : never = never,
 > = PublicEnumNameOrOptions extends { schema: keyof Database }
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-  ? PublicSchema["Enums"][PublicEnumNameOrOptions]
-  : never
+    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
@@ -887,9 +864,9 @@ export type CompositeTypes<
     schema: keyof Database
   }
     ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-  ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never

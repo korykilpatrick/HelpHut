@@ -2,21 +2,37 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DonationForm } from '../components/DonationForm';
 import type { z } from 'zod';
+import { api } from '../../../core/api';
+import { useAuth } from '../../../core/auth/useAuth';
+import { toast } from '../../../shared/components/toast';
 
 export function DonationSubmissionPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleSubmit = async (data: z.infer<typeof import('../components/DonationForm').donationSchema>) => {
     try {
       setIsSubmitting(true);
-      // TODO: Implement API call to submit donation
-      console.log('Submitting donation:', data);
       
-      // Temporarily simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Transform form data to API format
+      const donationData = {
+        donor_id: user?.organizationId!, // We know this exists for donor users
+        food_type_id: data.foodType,
+        quantity: data.quantity.amount,
+        unit: data.quantity.unit,
+        requires_refrigeration: data.handlingRequirements.refrigeration,
+        requires_freezing: data.handlingRequirements.freezing,
+        is_fragile: data.handlingRequirements.fragile,
+        requires_heavy_lifting: data.handlingRequirements.heavyLifting,
+        pickup_window_start: data.pickupWindow.startTime,
+        pickup_window_end: data.pickupWindow.endTime,
+        notes: data.notes
+      };
+
+      await api.donations.createDonation(donationData);
       
-      // Navigate to success page or dashboard
+      toast.success('Donation submitted successfully!');
       navigate('/donor/dashboard', { 
         state: { 
           message: 'Donation submitted successfully!' 
@@ -24,7 +40,7 @@ export function DonationSubmissionPage() {
       });
     } catch (error) {
       console.error('Error submitting donation:', error);
-      // TODO: Implement error handling
+      toast.error('Failed to submit donation. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

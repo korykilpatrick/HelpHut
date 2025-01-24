@@ -5,6 +5,7 @@ import { volunteersRouter } from './volunteers';
 import { partnersRouter } from './partners';
 import { donationsRouter } from './donations';
 import { ticketsRouter } from './tickets';
+import authRouter from './auth';
 import { caseTransformMiddleware } from '../middleware/case-transform';
 
 export function createApiRouter() {
@@ -12,6 +13,9 @@ export function createApiRouter() {
 
   // Apply case transformation middleware to all API routes
   router.use(caseTransformMiddleware);
+
+  // Mount auth routes first (no case transform needed for auth)
+  router.use('/auth', authRouter);
 
   // Mount feature-specific routers
   router.use('/users', usersRouter);
