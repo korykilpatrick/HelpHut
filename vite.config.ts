@@ -7,17 +7,20 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
 export default defineConfig({
   plugins: [react(), runtimeErrorOverlay(), themePlugin()],
   resolve: {
     alias: {
       "@db": path.resolve(__dirname, "lib/db"),
       "@": path.resolve(__dirname, "client/src"),
-    },
+      "@lib": path.resolve(__dirname, "lib"),
+      "@server": path.resolve(__dirname, "server")
+    }
   },
   root: path.resolve(__dirname, "client"),
   build: {
     outDir: path.resolve(__dirname, "dist/public"),
-    emptyOutDir: true,
-  },
+    emptyOutDir: true
+  }
 });

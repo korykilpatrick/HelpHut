@@ -7,8 +7,57 @@ HelpHut is a food rescue management system for Austin nonprofits, connecting sur
 ## Technical Stack
 - Backend: Express.js with TypeScript
 - Database: PostgreSQL with Supabase
-- Frontend: (In planning)
+- Frontend: React with TypeScript, TailwindCSS, and Radix UI
 - Documentation: OpenAPI-driven development
+
+## Frontend Architecture
+The frontend is organized around user roles and workflows, following a portal-based architecture:
+
+### Directory Structure
+```
+client/src/
+├── core/                      # Core application framework
+│   ├── app/                   # Main app components
+│   ├── auth/                  # Authentication
+│   └── store/                # Global state management
+│
+├── portals/                   # User-specific interfaces
+│   ├── auth/                  # Authentication pages
+│   ├── donor/                # Donor portal
+│   ├── volunteer/            # Volunteer portal
+│   ├── partner/              # Partner portal
+│   └── admin/                # Admin portal
+│
+├── shared/                    # Shared components & utilities
+│   ├── components/           # Reusable UI components
+│   └── utils/                # Utility functions
+│
+└── workflows/                 # Business process flows
+    ├── food-rescue/          # Food rescue workflow
+    ├── shift-management/     # Volunteer shift workflow
+    └── impact-tracking/      # Impact measurement workflow
+```
+
+### Design Principles
+1. **Portal-Based Organization**
+   - Each user role has a dedicated portal
+   - Portals contain role-specific features and views
+   - Common layouts and components are shared
+
+2. **Workflow-Driven Development**
+   - Business processes are modeled as workflows
+   - Workflows are broken into discrete steps
+   - Progress tracking and state management per workflow
+
+3. **Component Architecture**
+   - Shared components for consistent UI
+   - Role-specific components within portals
+   - Workflow components for process visualization
+
+4. **State Management**
+   - Authentication state in core
+   - Workflow state per process
+   - Portal-specific state when needed
 
 ## Key File Locations
 - OpenAPI Spec: `docs/planning/openapi.yaml`
@@ -92,4 +141,49 @@ HelpHut is a food rescue management system for Austin nonprofits, connecting sur
 1. Check OpenAPI spec first
 2. Review type definitions (both API and DB)
 3. Look for similar patterns in existing code
-4. Consult documentation in `docs/` directory 
+4. Consult documentation in `docs/` directory
+
+## Frontend Development Workflow
+
+### Adding New Features
+1. **Portal Features**
+   - Add feature config to portal configuration
+   - Create feature components in portal directory
+   - Update portal routes in AppRoutes.tsx
+
+2. **Workflows**
+   - Define workflow steps and states
+   - Create workflow components
+   - Implement state management
+   - Add to relevant portal(s)
+
+3. **Shared Components**
+   - Place in shared/components
+   - Use consistent styling (TailwindCSS)
+   - Document props and usage
+   - Consider accessibility
+
+### Code Organization Rules
+1. **Component Structure**
+   - One component per file
+   - Co-locate related components
+   - Keep components focused and small
+   - Use TypeScript interfaces for props
+
+2. **State Management**
+   - Use React Query for API state
+   - Local state for UI interactions
+   - Context for cross-cutting concerns
+   - Document state shape and updates
+
+3. **Styling Guidelines**
+   - Use Tailwind utility classes
+   - Follow component-first approach
+   - Maintain consistent spacing
+   - Use design system tokens
+
+4. **Testing Requirements**
+   - Component unit tests
+   - Workflow integration tests
+   - Accessibility testing
+   - Visual regression tests 

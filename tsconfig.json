@@ -15,20 +15,17 @@
     "baseUrl": ".",
     "paths": {
       "@lib/*": ["lib/*"],
-      "@server/*": ["server/*"]
+      "@server/*": ["server/*"],
+      "@db/*": ["lib/db/*"],
+      "@db": ["lib/db/supabase.ts"],
+      "@/*": ["client/src/*"]
     },
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "jsx": "preserve"
   },
-  "include": ["server/**/*", "lib/**/*"],
+  "include": ["server/**/*", "lib/**/*", "client/**/*"],
   "exclude": ["node_modules", "build", "dist"],
-  "paths": {
-    "@lib/*": ["./lib/*"],
-    "@server/*": ["./server/*"],
-    "@db/*": ["./lib/db/*"],
-    "@db": ["./lib/db/supabase.ts"]
-  },
   "ts-node": {
     "esm": true
   }
