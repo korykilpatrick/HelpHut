@@ -19,18 +19,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user: null,
     isLoading: true,
   });
+  const [initialized, setInitialized] = useState(false);
 
-  // Check for existing session on mount
+  console.log('=== AuthProvider Render ===');
+  console.log('Current pathname:', location.pathname);
+  console.log('Current auth state:', authState);
+  console.log('Initialized:', initialized);
+
+  // Initial session check
   useEffect(() => {
-    const checkSession = async () => {
+    console.log('=== Initial Auth Check ===');
+    
+    const initialize = async () => {
       try {
         const savedAuth = localStorage.getItem('auth');
+        console.log('-> Saved auth exists:', !!savedAuth);
+        
         if (savedAuth) {
           const { token } = JSON.parse(savedAuth);
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           
+          console.log('-> Checking session');
           const response = await axios.get('/api/v1/auth/session');
           const { user } = response.data;
+          
+          console.log('-> Session valid, user:', user);
           
           setAuthState({
             user: {
@@ -38,39 +51,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: user.email,
               role: user.role.toLowerCase(),
               name: user.name || user.email,
-              organizationId: user.organization_id
+              organizationId: user.donor?.id
             },
             isLoading: false
           });
         } else {
+          console.log('-> No saved auth');
           setAuthState({ user: null, isLoading: false });
         }
       } catch (error) {
+        console.log('-> Auth check failed:', error);
         localStorage.removeItem('auth');
         delete axios.defaults.headers.common['Authorization'];
         setAuthState({ user: null, isLoading: false });
+      } finally {
+        console.log('-> Auth check complete');
+        setInitialized(true);
       }
     };
 
-    checkSession();
+    initialize();
   }, []);
 
-  // Handle navigation based on auth state
+  // Navigation handler
   useEffect(() => {
+    if (!initialized) {
+      console.log('-> Not initialized yet, skipping navigation');
+      return;
+    }
+
+    console.log('=== Navigation Check ===');
+    console.log('Auth state:', authState);
+    console.log('Current path:', location.pathname);
+
+    const currentPath = location.pathname;
+    const isPublicPath = PUBLIC_PATHS.includes(currentPath);
+
     if (!authState.isLoading) {
-      if (!authState.user && !PUBLIC_PATHS.includes(location.pathname)) {
+      if (!authState.user && !isPublicPath) {
+        console.log('-> Redirecting to login, saving path:', currentPath);
+        sessionStorage.setItem('redirectTo', currentPath);
         navigate('/login', { replace: true });
-      } else if (authState.user && PUBLIC_PATHS.includes(location.pathname)) {
-        navigate('/', { replace: true });
+      } else if (authState.user && isPublicPath) {
+        const redirectTo = sessionStorage.getItem('redirectTo') || '/';
+        console.log('-> Redirecting to:', redirectTo);
+        sessionStorage.removeItem('redirectTo');
+        navigate(redirectTo, { replace: true });
       }
     }
-  }, [authState.user, authState.isLoading, location.pathname, navigate]);
+  }, [authState, initialized, location.pathname, navigate]);
+
+  // Don't render anything until we're initialized
+  if (!initialized) {
+    console.log('-> Not initialized, rendering nothing');
+    return null;
+  }
 
   const login = async (email: string, password: string) => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
     try {
       const response = await axios.post('/api/v1/auth/login', { email, password });
       const { user, session } = response.data;
+      
+      console.log('Login response:', response.data);
       
       // Store the session token
       localStorage.setItem('auth', JSON.stringify({ token: session.token }));
@@ -82,11 +125,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: user.email,
           role: user.role.toLowerCase(),
           name: user.name || email,
-          organizationId: user.organization_id
+          organizationId: user.donor?.id // For donors, use the donor record ID
         }, 
         isLoading: false 
       });
     } catch (error) {
+      console.error('Login error:', error);
       setAuthState({ user: null, isLoading: false, error: 'Login failed' });
       throw error;
     }

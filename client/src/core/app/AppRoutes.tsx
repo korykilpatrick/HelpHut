@@ -49,7 +49,7 @@ export function AppRoutes() {
         
         {/* Donor Routes */}
         <Route path="/donor/dashboard" element={<DashboardPage />} />
-        <Route path="/donor/donations/new" element={<DonationSubmissionPage />} />
+        <Route path="/donor/donate" element={<DonationSubmissionPage />} />
         
         {/* Add other role-specific routes here */}
       </Route>

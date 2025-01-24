@@ -1,66 +1,68 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
-import { toast } from '../../../shared/components/toast';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useNavigate } from 'react-router-dom';
+import { Input } from '@/shared/components/inputs/Input';
+import { Button } from '@/shared/components/buttons/Button';
+import { Select } from '@/shared/components/inputs/Select';
+import { api } from '@/core/api';
+import { useAuth } from '@/core/auth/useAuth';
+import { toast } from '@/shared/components/toast';
+import { getSignupSchema, type SignupData } from '../types';
+import { z } from 'zod';
+
+const roleOptions = [
+  { value: 'Donor', label: 'Food Donor' },
+  { value: 'Volunteer', label: 'Volunteer' },
+  { value: 'Partner', label: 'Partner Organization' }
+];
 
 export function SignupPage() {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: 'donor',
-    name: '',
-    organizationName: ''
-  });
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const [selectedRole, setSelectedRole] = React.useState('Donor');
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    
-    console.log('Form submission started with data:', {
-      ...formData,
-      password: '[REDACTED]',
-      confirmPassword: '[REDACTED]'
-    });
-    
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+  } = useForm<SignupData>({
+    resolver: zodResolver(getSignupSchema(selectedRole)),
+    defaultValues: {
+      role: 'Donor' as const,
     }
+  });
 
+  // Watch the role field to update the form schema
+  React.useEffect(() => {
+    const role = watch('role');
+    if (role !== selectedRole) {
+      setSelectedRole(role);
+    }
+  }, [watch('role'), selectedRole]);
+
+  // Helper to safely get error messages
+  const getErrorMessage = (field: string) => {
+    return (errors as any)[field]?.message as string | undefined;
+  };
+
+  const onSubmit = async (data: SignupData) => {
     try {
       setIsSubmitting(true);
-      console.log('Making signup request to /api/v1/auth/signup');
       
-      const response = await axios.post('/api/v1/auth/signup', {
-        email: formData.email,
-        password: formData.password,
-        role: formData.role,
-        name: formData.name,
-        organization_name: formData.organizationName
-      });
+      // Sign up the user
+      await api.auth.signup(data);
       
-      console.log('Signup response:', {
-        status: response.status,
-        data: {
-          ...response.data,
-          user: {
-            ...response.data.user,
-            password: '[REDACTED]'
-          }
-        }
-      });
+      // Log them in
+      await login(data.email, data.password);
       
-      toast.success('Account created! Please check your email to confirm your account before logging in.');
-      window.location.href = '/login?email=' + encodeURIComponent(formData.email);
-    } catch (err: any) {
-      console.error('Signup error:', {
-        message: err.message,
-        response: err.response?.data
-      });
-      setError(err.response?.data?.error || 'Failed to create account');
+      toast.success('Account created successfully!');
+      navigate(`/${data.role.toLowerCase()}/dashboard`);
+    } catch (error) {
+      console.error('Signup error:', error);
+      toast.error('Failed to create account. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -74,128 +76,112 @@ export function SignupPage() {
             Create your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
-              sign in to your existing account
-            </Link>
+            Join us in reducing food waste and feeding those in need
           </p>
         </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
-            </div>
-          )}
-          
+
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="rounded-md shadow-sm space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="you@example.com"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Your Name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="John Doe"
-              />
-            </div>
+            <Input
+              label="Name"
+              type="text"
+              error={getErrorMessage('name')}
+              registration={register('name')}
+              placeholder="Your name"
+            />
 
-            <div>
-              <label htmlFor="organizationName" className="block text-sm font-medium text-gray-700">
-                Organization Name
-              </label>
-              <input
-                id="organizationName"
-                name="organizationName"
-                type="text"
-                required
-                value={formData.organizationName}
-                onChange={(e) => setFormData(prev => ({ ...prev, organizationName: e.target.value }))}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Your Organization"
-              />
-            </div>
+            <Input
+              label="Email"
+              type="email"
+              error={getErrorMessage('email')}
+              registration={register('email')}
+              placeholder="you@example.com"
+            />
 
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                I am a...
-              </label>
-              <select
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-              >
-                <option value="Donor">Food Donor</option>
-                <option value="Volunteer">Volunteer</option>
-                <option value="Partner">Partner Organization</option>
-              </select>
-            </div>
-            
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="••••••••"
-              />
-            </div>
+            <Input
+              label="Password"
+              type="password"
+              error={getErrorMessage('password')}
+              registration={register('password')}
+              placeholder="••••••••"
+            />
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="••••••••"
-              />
-            </div>
+            <Select
+              label="I am a..."
+              options={roleOptions}
+              error={getErrorMessage('role')}
+              registration={register('role')}
+            />
+
+            {/* Donor-specific fields */}
+            {selectedRole === 'Donor' && (
+              <>
+                <Input
+                  label="Organization Name"
+                  error={getErrorMessage('organizationName')}
+                  registration={register('organizationName')}
+                  placeholder="Your organization's name"
+                />
+                <Input
+                  label="Phone Number"
+                  error={getErrorMessage('phone')}
+                  registration={register('phone')}
+                  placeholder="(555) 555-5555"
+                />
+                <Input
+                  label="Business Hours"
+                  error={getErrorMessage('businessHours')}
+                  registration={register('businessHours')}
+                  placeholder="e.g. Mon-Fri 9am-5pm"
+                />
+              </>
+            )}
+
+            {/* Volunteer-specific fields */}
+            {selectedRole === 'Volunteer' && (
+              <>
+                <Input
+                  label="Phone Number"
+                  error={getErrorMessage('phone')}
+                  registration={register('phone')}
+                  placeholder="(555) 555-5555"
+                />
+                <Input
+                  label="Vehicle Type"
+                  error={getErrorMessage('vehicleType')}
+                  registration={register('vehicleType')}
+                  placeholder="e.g. Sedan, SUV, Van"
+                />
+              </>
+            )}
+
+            {/* Partner-specific fields */}
+            {selectedRole === 'Partner' && (
+              <>
+                <Input
+                  label="Organization Name"
+                  error={getErrorMessage('organizationName')}
+                  registration={register('organizationName')}
+                  placeholder="Your organization's name"
+                />
+                <Input
+                  label="Phone Number"
+                  error={getErrorMessage('phone')}
+                  registration={register('phone')}
+                  placeholder="(555) 555-5555"
+                />
+              </>
+            )}
           </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {isSubmitting ? 'Creating account...' : 'Create account'}
-            </button>
-          </div>
+          <Button
+            type="submit"
+            className="w-full"
+            size="lg"
+            isLoading={isSubmitting}
+          >
+            Create Account
+          </Button>
         </form>
       </div>
     </div>

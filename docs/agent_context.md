@@ -316,4 +316,14 @@ client/src/
    - Component unit tests
    - Workflow integration tests
    - Accessibility testing
-   - Visual regression tests 
+   - Visual regression tests
+
+## Authentication Implementation Notes
+
+### Critical Implementation Details
+- Auth routes are mounted at `/api/v1/auth`
+- User profiles are created by database trigger after Supabase auth user creation
+- Database trigger requires explicit permissions on auth schema
+- Frontend handles both signup and login states with appropriate user messaging
+
+// ... existing code ... 

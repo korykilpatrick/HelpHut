@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { SignupData } from '@/portals/auth/types';
 
 // Create axios instance with default config
 const axiosInstance = axios.create({
@@ -25,6 +26,8 @@ export const api = {
   auth: {
     login: (email: string, password: string) => 
       axiosInstance.post('/auth/login', { email, password }),
+    signup: (data: SignupData) =>
+      axiosInstance.post('/auth/signup', data),
     logout: () => 
       axiosInstance.post('/auth/logout'),
     getSession: () => 

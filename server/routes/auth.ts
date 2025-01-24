@@ -63,12 +63,34 @@ router.post('/login', async (req, res) => {
         .select('*')
         .eq('user_id', userData.id)
         .single();
+      
       if (donorError) {
-        console.error('Error fetching donor data:', donorError);
-        throw donorError;
+        if (donorError.code === 'PGRST116') { // Not found
+          console.log('No donor record found, creating placeholder...');
+          const { data: newDonor, error: createError } = await supabase
+            .from('donors')
+            .insert({
+              user_id: userData.id,
+              organization_name: userData.display_name,
+              phone: '0000000000'
+            })
+            .select()
+            .single();
+            
+          if (createError) {
+            console.error('Error creating placeholder donor record:', createError);
+            throw createError;
+          }
+          orgData = newDonor;
+          console.log('Created placeholder donor record:', { id: newDonor.id });
+        } else {
+          console.error('Error fetching donor data:', donorError);
+          throw donorError;
+        }
+      } else {
+        orgData = donorData;
+        console.log('Donor data fetched:', { id: donorData.id, organization: donorData.organization_name });
       }
-      orgData = donorData;
-      console.log('Donor data fetched:', { id: donorData.id, organization: donorData.organization_name });
     } else if (userData.role === 'Volunteer') {
       console.log('Fetching volunteer data...');
       const { data: volunteerData, error: volunteerError } = await supabase
@@ -119,7 +141,7 @@ router.post('/signup', async (req, res) => {
     password: '[REDACTED]'
   });
 
-  const { email, password, role: rawRole, name, organization_name } = req.body;
+  const { email, password, role: rawRole, name, organization_name, phone, business_hours } = req.body;
   
   // Validate and normalize role
   const role = (rawRole as string).charAt(0).toUpperCase() + (rawRole as string).slice(1).toLowerCase();
@@ -240,28 +262,23 @@ router.post('/signup', async (req, res) => {
       throw new Error('Failed to create user profile');
     }
 
-    // Create role-specific record
-    let organizationData;
+    // Create or update organization-specific record
     if (role === 'Donor') {
       console.log('Creating donor record...');
-      const { data: donorData, error: donorError } = await supabase
+      const { error: donorError } = await supabase
         .from('donors')
-        .insert({
-          user_id: userData.id, // Use userData.id instead of authData.user.id
-          organization_name,
-          phone: '0000000000' // TODO: Add phone to signup form
-        })
-        .select()
-        .single();
-      
+        .upsert({
+          user_id: userData.id,
+          organization_name: organization_name,
+          phone,
+          business_hours
+        });
+
       if (donorError) {
-        console.error('Donor record creation error:', donorError);
-        // Clean up auth user if donor creation fails
-        await supabaseAuth.auth.admin.deleteUser(authData.user.id);
+        console.error('Error creating donor record:', donorError);
         throw donorError;
       }
-      organizationData = donorData;
-      console.log('Donor record created:', { id: donorData.id });
+      console.log('Donor record created successfully');
     }
 
     console.log('Signup completed successfully');
@@ -270,7 +287,7 @@ router.post('/signup', async (req, res) => {
       user: {
         ...authData.user,
         ...userData,
-        organization: organizationData
+        organization: userData
       },
       session: authData.session
     });
@@ -310,17 +327,45 @@ router.get('/session', async (req, res) => {
         .select('*')
         .eq('user_id', userData.id)
         .single();
-      if (donorError) throw donorError;
-      orgData = donorData;
+      
+      if (donorError) {
+        if (donorError.code === 'PGRST116') { // Not found
+          console.log('No donor record found in session, creating placeholder...');
+          const { data: newDonor, error: createError } = await supabase
+            .from('donors')
+            .insert({
+              user_id: userData.id,
+              organization_name: userData.display_name,
+              phone: '0000000000'
+            })
+            .select()
+            .single();
+            
+          if (createError) {
+            console.error('Error creating placeholder donor record:', createError);
+            throw createError;
+          }
+          orgData = newDonor;
+          console.log('Created placeholder donor record:', { id: newDonor.id });
+        } else {
+          console.error('Error fetching donor data:', donorError);
+          throw donorError;
+        }
+      } else {
+        orgData = donorData;
+        console.log('Donor data fetched:', { id: donorData.id, organization: donorData.organization_name });
+      }
     }
     // Add similar blocks for other roles
 
     return res.json({ 
-      session,
       user: {
         ...session.user,
         ...userData,
-        organization: orgData
+        donor: orgData // Use donor field to match AuthProvider expectations
+      },
+      session: {
+        token: session.access_token // Include the token in the expected format
       }
     });
   } catch (error: any) {

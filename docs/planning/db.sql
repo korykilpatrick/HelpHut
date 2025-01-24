@@ -506,4 +506,8 @@ CREATE INDEX IF NOT EXISTS idx_donations_donated_at ON donations(donated_at);
 CREATE INDEX IF NOT EXISTS idx_donations_pickup_window ON donations(pickup_window_start, pickup_window_end);
 CREATE INDEX IF NOT EXISTS idx_donations_handling_reqs ON donations(requires_refrigeration, requires_freezing, requires_heavy_lifting) WHERE requires_refrigeration OR requires_freezing OR requires_heavy_lifting;
 
+-- Drop the donor trigger and function if they exist
+DROP TRIGGER IF EXISTS on_donor_user_created ON users;
+DROP FUNCTION IF EXISTS public.handle_new_donor_user();
+
 -- End of db.sql
