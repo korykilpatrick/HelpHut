@@ -4,6 +4,7 @@ import { validateRequest } from '../middleware/validate';
 import { api } from '../../lib/api/impl';
 import type { DonationCreate } from '../../lib/api/generated/src/models/DonationCreate';
 import type { DonationUpdate } from '../../lib/api/generated/src/models/DonationUpdate';
+import { DonationNotFoundError, DonationValidationError, DonationConflictError } from '../../lib/api/impl/donations';
 
 const router = Router();
 
@@ -44,8 +45,47 @@ const donationUpdateSchema = z.object({
   { message: "Pickup window end time must be after start time" }
 );
 
+// Error handler middleware
+const handleDonationError = (error: any, res: any) => {
+  if (error instanceof DonationNotFoundError) {
+    return res.status(404).json({
+      error: {
+        type: 'NOT_FOUND',
+        message: error.message
+      }
+    });
+  }
+  
+  if (error instanceof DonationValidationError) {
+    return res.status(400).json({
+      error: {
+        type: 'VALIDATION_ERROR',
+        message: error.message
+      }
+    });
+  }
+  
+  if (error instanceof DonationConflictError) {
+    return res.status(409).json({
+      error: {
+        type: 'CONFLICT',
+        message: error.message
+      }
+    });
+  }
+
+  // Default error response
+  console.error('Unhandled donation error:', error);
+  return res.status(500).json({
+    error: {
+      type: 'INTERNAL_ERROR',
+      message: 'An unexpected error occurred'
+    }
+  });
+};
+
 // GET /donations - List donations
-router.get('/', async (req, res, next) => {
+router.get('/', async (req, res) => {
   try {
     const { limit = 10, offset = 0 } = req.query;
     const donations = await api.donations.listDonations(
@@ -54,47 +94,53 @@ router.get('/', async (req, res, next) => {
     );
     res.json({ donations });
   } catch (error) {
-    next(error);
+    handleDonationError(error, res);
   }
 });
 
 // POST /donations - Create donation
-router.post('/', validateRequest({ body: donationCreateSchema }), async (req, res, next) => {
+router.post('/', validateRequest({ body: donationCreateSchema }), async (req, res) => {
   try {
     const donation = await api.donations.createDonation(req.body);
-    res.status(201).json({ donation });
+    res.status(201).json({ 
+      donation,
+      message: 'Donation created successfully'
+    });
   } catch (error) {
-    next(error);
+    handleDonationError(error, res);
   }
 });
 
 // GET /donations/:id - Get donation by ID
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', async (req, res) => {
   try {
     const donation = await api.donations.getDonation(req.params.id);
     res.json({ donation });
   } catch (error) {
-    next(error);
+    handleDonationError(error, res);
   }
 });
 
 // PATCH /donations/:id - Update donation
-router.patch('/:id', validateRequest({ body: donationUpdateSchema }), async (req, res, next) => {
+router.patch('/:id', validateRequest({ body: donationUpdateSchema }), async (req, res) => {
   try {
     const donation = await api.donations.updateDonation(req.params.id, req.body);
-    res.json({ donation });
+    res.json({ 
+      donation,
+      message: 'Donation updated successfully'
+    });
   } catch (error) {
-    next(error);
+    handleDonationError(error, res);
   }
 });
 
 // DELETE /donations/:id - Delete donation
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', async (req, res) => {
   try {
     await api.donations.deleteDonation(req.params.id);
     res.status(204).send();
   } catch (error) {
-    next(error);
+    handleDonationError(error, res);
   }
 });
 

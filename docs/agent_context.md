@@ -118,7 +118,7 @@ client/src/
 ### 3. Route Implementation
 - Use Express Router
 - Apply validateRequest middleware
-- Handle all errors consistently
+- Handle critical errors for business logic
 - Standard CRUD pattern:
   ```typescript
   // GET list
@@ -143,17 +143,35 @@ client/src/
   });
   ```
 
-### 4. Case Transformation Rules
+### 4. Error Handling Strategy
+- Focus on business-critical errors first
+- Add error handling based on user impact
+- Common error patterns:
+  ```typescript
+  // Critical business logic errors
+  if (!donor) {
+    throw new ValidationError('Donor not found');
+  }
+
+  // Data integrity errors
+  if (donation.status === 'completed') {
+    throw new StateError('Cannot modify completed donation');
+  }
+
+  // Optional enhancement errors
+  try {
+    await sendNotification(user);
+  } catch (error) {
+    // Log but don't fail the request
+    console.warn('Notification failed:', error);
+  }
+  ```
+
+### 5. Case Transformation Rules
 - Routes receive camelCase from clients
 - Database operations use snake_case
 - Case transformation is automatic via middleware
 - No manual case conversion needed in route handlers
-
-### 5. Validation Rules
-- Always validate request bodies
-- Use Zod schemas for validation
-- Match schema types to generated API types
-- Handle validation errors via middleware
 
 ### Common Patterns
 1. **Date Handling**
@@ -191,8 +209,8 @@ client/src/
 - [ ] Define local type aliases
 - [ ] Create Zod schemas
 - [ ] Implement CRUD routes
-- [ ] Add validation middleware
-- [ ] Handle errors consistently
+- [ ] Add critical error handling
+- [ ] Handle business logic errors
 - [ ] Export router
 
 ## Development Principles
@@ -203,10 +221,13 @@ client/src/
 
 2. **Type Safety**
    - Use TypeScript strict mode
+   - Validate all inputs at boundaries
+   - Handle nullability explicitly
 
 3. **Modular Architecture**
    - Clear separation of concerns
    - Reusable components and utilities
+   - Feature-specific error handling
 
 4. **Documentation Requirements**
    - JSDoc comments for functions and classes
@@ -223,25 +244,25 @@ client/src/
 
 ### During Implementation
 1. Follow TypeScript strict guidelines
-2. Implement proper error handling
+2. Implement critical error handling
 3. Add logging where appropriate
-4. Update documentation (including this file if prompted to)
+4. Update documentation
 
 ### After Changes
 1. Verify type safety
-2. Update affected documentation
+2. Test critical paths
 3. Document breaking changes
 
 ## Quality Standards
 - All code must pass TypeScript strict checks
 - Follow established naming conventions
-- Include error handling
+- Handle critical errors
 - Add appropriate logging
 - Update documentation
 
 ## Common Gotchas
 1. Always check for null/undefined in type definitions
-2. Use proper error handling with typed errors
+2. Handle critical business logic errors first
 3. Keep database operations within transaction boundaries
 4. Maintain proper logging context
 5. Remember API types are auto-generated - modify OpenAPI spec instead of type files
