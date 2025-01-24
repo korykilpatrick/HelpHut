@@ -5,6 +5,7 @@ import { PortalLayout } from '@/shared/components/layout/PortalLayout';
 import { donorPortalConfig } from '@/portals/donor/config';
 import { LoginPage } from '@/portals/auth/pages/LoginPage';
 import { DashboardPage } from '@/portals/donor/pages/DashboardPage';
+import { DonationSubmissionPage } from '@/portals/donor/pages/DonationSubmissionPage';
 
 // TODO: Import other portal configs as they're created
 // import { volunteerPortalConfig } from '../../portals/volunteer/config';
@@ -65,7 +66,7 @@ export function AppRoutes() {
           path="donate" 
           element={
             <PortalLayout config={portalConfig!}>
-              <div>Quick Donate Form</div>
+              <DonationSubmissionPage />
             </PortalLayout>
           } 
         />
