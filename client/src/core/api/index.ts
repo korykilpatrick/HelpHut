@@ -41,6 +41,15 @@ axiosInstance.interceptors.response.use(
   }
 );
 
+interface GetDonationsParams {
+  limit?: number;
+  offset?: number;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+}
+
 export const api = {
   auth: {
     login: (email: string, password: string) => 
@@ -55,7 +64,14 @@ export const api = {
   donations: {
     createDonation: (data: any) => 
       axiosInstance.post('/donations', data),
-    // Add other donation endpoints as needed
+    getDonations: (params: GetDonationsParams) =>
+      axiosInstance.get('/donations', { params }),
+    getDonation: (id: string) =>
+      axiosInstance.get(`/donations/${id}`),
+    updateDonation: (id: string, data: any) =>
+      axiosInstance.patch(`/donations/${id}`, data),
+    deleteDonation: (id: string) =>
+      axiosInstance.delete(`/donations/${id}`),
   },
   foodTypes: {
     list: () => axiosInstance.get('/food-types'),

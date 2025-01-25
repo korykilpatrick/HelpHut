@@ -7,6 +7,7 @@ import { LoginPage } from '@/portals/auth/pages/LoginPage';
 import { SignupPage } from '@/portals/auth/pages/SignupPage';
 import { DashboardPage } from '@/portals/donor/pages/DashboardPage';
 import { DonationSubmissionPage } from '@/portals/donor/pages/DonationSubmissionPage';
+import { DonationListPage } from '@/portals/donor/pages/DonationListPage';
 
 // TODO: Import other portal configs as they're created
 // import { volunteerPortalConfig } from '../../portals/volunteer/config';
@@ -50,6 +51,7 @@ export function AppRoutes() {
         {/* Donor Routes */}
         <Route path="/donor/dashboard" element={<DashboardPage />} />
         <Route path="/donor/donate" element={<DonationSubmissionPage />} />
+        <Route path="/donor/history" element={<DonationListPage />} />
         
         {/* Add other role-specific routes here */}
       </Route>
