@@ -7,7 +7,7 @@ HelpHut is a food rescue management system for Austin nonprofits, connecting sur
 ## Technical Stack
 - Backend: Express.js with TypeScript
 - Database: PostgreSQL with Supabase
-- Frontend: React with TypeScript, TailwindCSS, and Radix UI
+- Frontend: React with TypeScript, TailwindCSS, Redux and Radix UI
 - Documentation: OpenAPI-driven development
 
 ## Frontend Architecture
