@@ -3,6 +3,7 @@ import express, { type Request, Response, NextFunction } from 'express';
 import { registerRoutes } from './routes';
 import dotenv from 'dotenv';
 import { serveStatic, log } from "./vite";
+import { verifyConnection } from '../lib/db/supabase.js';
 
 dotenv.config();
 
@@ -67,22 +68,31 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
-  // Register routes first
-  await registerRoutes(app);
+  try {
+    // Verify Supabase connection first
+    await verifyConnection();
+    console.log('✅ Successfully connected to Supabase');
 
-  // Start the server
-  const server = app.listen(PORT, () => {
-    console.log(`[express] 🚀 Server started successfully`);
-    console.log(`[express] 📡 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`[express] 🌐 Server listening at http://localhost:${PORT}`);
-  });
+    // Register routes
+    await registerRoutes(app);
 
-  // In production, serve the static files
-  if (process.env.NODE_ENV === 'production') {
-    serveStatic(app);
+    // Start the server
+    const server = app.listen(PORT, () => {
+      console.log(`[express] 🚀 Server started successfully`);
+      console.log(`[express] 📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`[express] 🌐 Server listening at http://localhost:${PORT}`);
+    });
+
+    // In production, serve the static files
+    if (process.env.NODE_ENV === 'production') {
+      serveStatic(app);
+    }
+
+    return server;
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
   }
-
-  return server;
 };
 
 // Start server if this file is run directly

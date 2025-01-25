@@ -1,8 +1,8 @@
-import dotenv from 'dotenv';
+import { config } from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types.js';
 
-dotenv.config();
+config();
 
 if (!process.env.SUPABASE_URL) {
   throw new Error('Missing env.SUPABASE_URL');
@@ -65,11 +65,3 @@ export async function verifyConnection() {
     throw new Error('Failed to establish Supabase connection');
   }
 }
-
-// Verify connection immediately
-verifyConnection()
-  .then(() => console.log('✅ Successfully connected to Supabase'))
-  .catch((error) => {
-    console.error('❌ Failed to connect to Supabase:', error);
-    process.exit(1); // Exit if we can't connect to the database
-  });
