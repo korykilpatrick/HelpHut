@@ -360,4 +360,93 @@ client/src/
    - Handle database constraints
    - Use TypeScript for early error catching
 
+## Portal-Based Navigation Guidelines
+
+### Portal State Management
+1. **Portal Context**
+   - Use Redux for portal state
+   - Track current portal, sidebar state, and navigation path
+   - Handle portal switching via `PortalSwitcher`
+
+2. **Route Structure**
+   ```typescript
+   <Route path="/portal-name" element={<PortalLayout config={portalConfig}><Outlet /></PortalLayout>}>
+     <Route path="dashboard" element={<DashboardPage />} />
+     <Route path="feature" element={<FeaturePage />} />
+   </Route>
+   ```
+
+3. **Portal Configuration**
+   - Define portal config in separate files
+   - Include portal ID, title, and navigation items
+   - Use consistent navigation structure across portals
+
+### Common Navigation Pitfalls
+1. **Portal Switching**
+   - Always update portal state when switching
+   - Clear portal-specific state when changing portals
+   - Handle deep links correctly
+
+2. **Layout Consistency**
+   - Use `PortalLayout` for all portal pages
+   - Maintain consistent navigation structure
+   - Handle responsive states uniformly
+
+3. **State Management**
+   - Scope state to portal where possible
+   - Share common state through core store
+   - Clear portal state on exit
+
+## Component Architecture Patterns
+
+### Portal Page Structure
+```typescript
+export function PortalPage() {
+  // 1. Queries and state
+  const { data, isLoading } = useQuery({ ... });
+  
+  // 2. Mutations and handlers
+  const mutation = useMutation({ ... });
+  
+  // 3. Effects and derived state
+  useEffect(() => { ... }, []);
+  
+  // 4. Loading states
+  if (isLoading) return <LoadingState />;
+  
+  // 5. Error states
+  if (error) return <ErrorState error={error} />;
+  
+  // 6. Success state
+  return (
+    <div className="container mx-auto py-8">
+      <PageHeader />
+      <MainContent data={data} />
+      <PageActions onAction={mutation.mutate} />
+    </div>
+  );
+}
+```
+
+### Component Best Practices
+1. **State Management**
+   - Use React Query for server state
+   - Local state for UI interactions
+   - Redux for cross-cutting concerns
+
+2. **Error Handling**
+   - Handle loading states consistently
+   - Show appropriate error messages
+   - Provide retry mechanisms
+
+3. **Data Flow**
+   - Pass minimal props
+   - Use composition for complex UIs
+   - Handle loading/error at appropriate levels
+
+4. **Performance**
+   - Implement proper memoization
+   - Use virtualization for long lists
+   - Lazy load portal components
+
 // ... existing code ... 
