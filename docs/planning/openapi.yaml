@@ -2615,6 +2615,9 @@ components:
         requires_heavy_lifting:
           type: boolean
           default: false
+        notes:
+          type: string
+          description: Additional notes about the donation
         pickup_window_start:
           type: string
           format: date-time
@@ -2670,6 +2673,9 @@ components:
         requires_heavy_lifting:
           type: boolean
           default: false
+        notes:
+          type: string
+          description: Additional notes about the donation
         pickup_window_start:
           type: string
           format: date-time
@@ -2701,6 +2707,9 @@ components:
           type: boolean
         requires_heavy_lifting:
           type: boolean
+        notes:
+          type: string
+          description: Additional notes about the donation
         pickup_window_start:
           type: string
           format: date-time

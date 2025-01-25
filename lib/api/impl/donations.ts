@@ -1,6 +1,7 @@
 import { BaseApiImpl } from './base';
 import type { Donation, DonationCreate, DonationUpdate } from '../generated/src/models';
 import { toSnakeCase } from '../../utils/case-transform';
+import { PostgrestError } from '@supabase/supabase-js';
 
 // Custom error classes for donation-specific errors
 export class DonationNotFoundError extends Error {
@@ -27,26 +28,113 @@ export class DonationConflictError extends Error {
   }
 }
 
+// Define the database row type
+interface DonationRow {
+  id: string;
+  food_type_id: string;
+  food_type: {
+    id: string;
+    name: string;
+  };
+  quantity: number;
+  unit: string;
+  status: string;
+  pickup_window_start: string;
+  pickup_window_end: string;
+  donor_id: string;
+  created_at: string;
+  updated_at: string;
+  requires_refrigeration?: boolean;
+  requires_freezing?: boolean;
+  is_fragile?: boolean;
+  requires_heavy_lifting?: boolean;
+  notes?: string;
+  ticket?: {
+    status: string;
+  };
+}
+
 export class DonationsApiImpl extends BaseApiImpl {
-  async listDonations(limit?: number, offset?: number): Promise<Donation[]> {
+  async listDonations(params: {
+    limit?: number;
+    offset?: number;
+    status?: string;
+    search?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<{ donations: Donation[] }> {
     try {
+      console.log('Listing donations with params:', params);
+      
       let query = this.db
         .from('donations')
-        .select('*');
+        .select(`
+          *,
+          food_type:food_types(*),
+          ticket:tickets(status)
+        `);
+
+      // Apply filters
+      if (params.status) {
+        query = query.eq('tickets.status', params.status);
+      }
       
-      if (limit) {
-        query = query.limit(limit);
+      if (params.startDate) {
+        query = query.gte('pickup_window_start', params.startDate);
       }
-      if (offset) {
-        query = query.range(offset, offset + (limit || 10) - 1);
+      
+      if (params.endDate) {
+        query = query.lte('pickup_window_end', params.endDate);
       }
+      
+      if (params.search) {
+        query = query.textSearch('food_type_name', params.search);
+      }
+
+      // Apply pagination
+      if (params.limit) {
+        query = query.limit(params.limit);
+      }
+      if (params.offset) {
+        query = query.range(params.offset, params.offset + (params.limit || 10) - 1);
+      }
+
+      // Order by pickup window
+      query = query.order('pickup_window_start', { ascending: true });
 
       const { data, error } = await query;
       
-      if (error) throw error;
-      return data as Donation[];
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      // Transform the response to match the API format
+      const donations = (data as DonationRow[]).map(row => ({
+        id: row.id,
+        foodTypeId: row.food_type_id,
+        quantity: row.quantity,
+        unit: row.unit,
+        pickupWindowStart: new Date(row.pickup_window_start),
+        pickupWindowEnd: new Date(row.pickup_window_end),
+        donorId: row.donor_id,
+        createdAt: new Date(row.created_at),
+        updatedAt: new Date(row.updated_at),
+        requiresRefrigeration: row.requires_refrigeration,
+        requiresFreezing: row.requires_freezing,
+        isFragile: row.is_fragile,
+        requiresHeavyLifting: row.requires_heavy_lifting,
+        notes: row.notes,
+        ticket: row.ticket ? { status: row.ticket.status } : undefined
+      }));
+
+      return { donations };
     } catch (error) {
-      return this.handleError(error);
+      console.error('Error in listDonations:', error);
+      if (error instanceof PostgrestError) {
+        throw new Error('Database error: ' + error.message);
+      }
+      throw error;
     }
   }
 
@@ -57,52 +145,65 @@ export class DonationsApiImpl extends BaseApiImpl {
         throw new DonationValidationError('Pickup window end time must be after start time');
       }
 
-      // Check if donor exists
-      const { data: donor, error: donorError } = await this.db
-        .from('donors')
-        .select('id')
-        .eq('id', donation.donorId)
-        .single();
-
-      if (donorError || !donor) {
-        throw new DonationValidationError(`Donor with ID ${donation.donorId} not found`);
-      }
-
-      // Check if food type exists
-      const { data: foodType, error: foodTypeError } = await this.db
-        .from('food_types')
-        .select('id')
-        .eq('id', donation.foodTypeId)
-        .single();
-
-      if (foodTypeError || !foodType) {
-        throw new DonationValidationError(`Food type with ID ${donation.foodTypeId} not found`);
-      }
-
-      // Transform to snake_case before sending to Supabase
-      const snakeCaseDonation = toSnakeCase(donation);
-      console.log('Sending to Supabase:', snakeCaseDonation);
+      // Transform to snake_case for database
+      const dbDonation = {
+        donor_id: donation.donorId,
+        food_type_id: donation.foodTypeId,
+        quantity: donation.quantity,
+        unit: donation.unit,
+        requires_refrigeration: donation.requiresRefrigeration,
+        requires_freezing: donation.requiresFreezing,
+        is_fragile: donation.isFragile,
+        requires_heavy_lifting: donation.requiresHeavyLifting,
+        pickup_window_start: donation.pickupWindowStart,
+        pickup_window_end: donation.pickupWindowEnd
+      };
 
       const { data, error } = await this.db
         .from('donations')
-        .insert(snakeCaseDonation)
-        .select()
+        .insert(dbDonation)
+        .select(`
+          *,
+          food_type:food_types(*)
+        `)
         .single();
 
       if (error) {
-        if (error.code === '23505') { // Unique violation
-          throw new DonationConflictError('A donation with these details already exists');
-        }
+        console.error('Database error:', error);
         throw error;
       }
 
-      return data as Donation;
+      if (!data) {
+        throw new Error('Failed to create donation');
+      }
+
+      const row = data as DonationRow;
+      // Transform the response to match the API format
+      return {
+        id: row.id,
+        foodTypeId: row.food_type_id,
+        quantity: row.quantity,
+        unit: row.unit,
+        pickupWindowStart: new Date(row.pickup_window_start),
+        pickupWindowEnd: new Date(row.pickup_window_end),
+        donorId: row.donor_id,
+        createdAt: new Date(row.created_at),
+        updatedAt: new Date(row.updated_at),
+        requiresRefrigeration: row.requires_refrigeration,
+        requiresFreezing: row.requires_freezing,
+        isFragile: row.is_fragile,
+        requiresHeavyLifting: row.requires_heavy_lifting,
+        notes: row.notes
+      };
     } catch (error) {
-      if (error instanceof DonationValidationError || 
-          error instanceof DonationConflictError) {
+      console.error('Error in createDonation:', error);
+      if (error instanceof DonationValidationError) {
         throw error;
       }
-      return this.handleError(error);
+      if (error instanceof PostgrestError) {
+        throw new Error('Database error: ' + error.message);
+      }
+      throw new Error('Failed to create donation: ' + (error as Error).message);
     }
   }
 
@@ -110,58 +211,107 @@ export class DonationsApiImpl extends BaseApiImpl {
     try {
       const { data, error } = await this.db
         .from('donations')
-        .select('*')
+        .select(`
+          *,
+          food_type:food_types(*)
+        `)
         .eq('id', id)
         .single();
 
       if (error) throw error;
       if (!data) throw new DonationNotFoundError(id);
-      return data as Donation;
+
+      const row = data as DonationRow;
+      // Transform the response to match the API format
+      return {
+        id: row.id,
+        foodTypeId: row.food_type_id,
+        quantity: row.quantity,
+        unit: row.unit,
+        pickupWindowStart: new Date(row.pickup_window_start),
+        pickupWindowEnd: new Date(row.pickup_window_end),
+        donorId: row.donor_id,
+        createdAt: new Date(row.created_at),
+        updatedAt: new Date(row.updated_at),
+        requiresRefrigeration: row.requires_refrigeration,
+        requiresFreezing: row.requires_freezing,
+        isFragile: row.is_fragile,
+        requiresHeavyLifting: row.requires_heavy_lifting,
+        notes: row.notes
+      };
     } catch (error) {
+      console.error('Error in getDonation:', error);
       if (error instanceof DonationNotFoundError) {
         throw error;
       }
-      return this.handleError(error);
+      if (error instanceof PostgrestError) {
+        throw new Error('Database error: ' + error.message);
+      }
+      throw new Error('Failed to get donation: ' + (error as Error).message);
     }
   }
 
   async updateDonation(id: string, update: DonationUpdate): Promise<Donation> {
     try {
       // Check if donation exists
-      const existing = await this.getDonation(id);
+      await this.getDonation(id);
 
       // Validate pickup window if both times are provided
       if (update.pickupWindowStart && update.pickupWindowEnd) {
-        const startTime = new Date(update.pickupWindowStart);
-        const endTime = new Date(update.pickupWindowEnd);
-        if (startTime >= endTime) {
+        if (new Date(update.pickupWindowStart) >= new Date(update.pickupWindowEnd)) {
           throw new DonationValidationError('Pickup window end time must be after start time');
         }
       }
 
+      // Transform to snake_case for database
+      const dbUpdate = toSnakeCase(update);
+
       const { data, error } = await this.db
         .from('donations')
-        .update(update)
+        .update(dbUpdate)
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          food_type:food_types(*)
+        `)
         .single();
 
       if (error) throw error;
-      return data as Donation;
+      if (!data) throw new DonationNotFoundError(id);
+
+      const row = data as DonationRow;
+      // Transform the response to match the API format
+      return {
+        id: row.id,
+        foodTypeId: row.food_type_id,
+        quantity: row.quantity,
+        unit: row.unit,
+        pickupWindowStart: new Date(row.pickup_window_start),
+        pickupWindowEnd: new Date(row.pickup_window_end),
+        donorId: row.donor_id,
+        createdAt: new Date(row.created_at),
+        updatedAt: new Date(row.updated_at),
+        requiresRefrigeration: row.requires_refrigeration,
+        requiresFreezing: row.requires_freezing,
+        isFragile: row.is_fragile,
+        requiresHeavyLifting: row.requires_heavy_lifting,
+        notes: row.notes
+      };
     } catch (error) {
+      console.error('Error in updateDonation:', error);
       if (error instanceof DonationNotFoundError || 
           error instanceof DonationValidationError) {
         throw error;
       }
-      return this.handleError(error);
+      if (error instanceof PostgrestError) {
+        throw new Error('Database error: ' + error.message);
+      }
+      throw new Error('Failed to update donation: ' + (error as Error).message);
     }
   }
 
   async deleteDonation(id: string): Promise<void> {
     try {
-      // Check if donation exists
-      await this.getDonation(id);
-
       const { error } = await this.db
         .from('donations')
         .delete()
@@ -169,10 +319,11 @@ export class DonationsApiImpl extends BaseApiImpl {
 
       if (error) throw error;
     } catch (error) {
-      if (error instanceof DonationNotFoundError) {
-        throw error;
+      console.error('Error in deleteDonation:', error);
+      if (error instanceof PostgrestError) {
+        throw new Error('Database error: ' + error.message);
       }
-      this.handleError(error);
+      throw new Error('Failed to delete donation: ' + (error as Error).message);
     }
   }
 } 

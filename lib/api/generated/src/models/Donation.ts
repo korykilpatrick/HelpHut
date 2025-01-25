@@ -86,6 +86,12 @@ export interface Donation {
      */
     requiresHeavyLifting?: boolean;
     /**
+     * Additional notes about the donation
+     * @type {string}
+     * @memberof Donation
+     */
+    notes?: string;
+    /**
      * 
      * @type {Date}
      * @memberof Donation
@@ -152,6 +158,7 @@ export function DonationFromJSONTyped(json: any, ignoreDiscriminator: boolean): 
         'requiresFreezing': json['requires_freezing'] == null ? undefined : json['requires_freezing'],
         'isFragile': json['is_fragile'] == null ? undefined : json['is_fragile'],
         'requiresHeavyLifting': json['requires_heavy_lifting'] == null ? undefined : json['requires_heavy_lifting'],
+        'notes': json['notes'] == null ? undefined : json['notes'],
         'pickupWindowStart': (new Date(json['pickup_window_start'])),
         'pickupWindowEnd': (new Date(json['pickup_window_end'])),
         'donatedAt': json['donated_at'] == null ? undefined : (new Date(json['donated_at'])),
@@ -182,6 +189,7 @@ export function DonationToJSONTyped(value?: Donation | null, ignoreDiscriminator
         'requires_freezing': value['requiresFreezing'],
         'is_fragile': value['isFragile'],
         'requires_heavy_lifting': value['requiresHeavyLifting'],
+        'notes': value['notes'],
         'pickup_window_start': ((value['pickupWindowStart']).toISOString()),
         'pickup_window_end': ((value['pickupWindowEnd']).toISOString()),
         'donated_at': value['donatedAt'] == null ? undefined : ((value['donatedAt']).toISOString()),
