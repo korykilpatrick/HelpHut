@@ -320,10 +320,44 @@ client/src/
 
 ## Authentication Implementation Notes
 
-### Critical Implementation Details
-- Auth routes are mounted at `/api/v1/auth`
-- User profiles are created by database trigger after Supabase auth user creation
-- Database trigger requires explicit permissions on auth schema
-- Frontend handles both signup and login states with appropriate user messaging
+### Data Flow & Case Transformation
+1. **Case Convention Rules**
+   - Frontend (Client) → camelCase
+   - Database → snake_case
+   - API Layer → Handles transformation
+   - Use `lib/utils/case-transform.ts` utilities:
+     ```typescript
+     import { toCamelCase, toSnakeCase } from '../../utils/case-transform';
+     ```
+
+2. **Data Flow Pattern**
+   ```
+   Client (camelCase) 
+     → API Validation (camelCase)
+     → Database Operation (snake_case)
+     → Response Transform (camelCase)
+     → Client
+   ```
+
+3. **Implementation Checklist**
+   - [ ] Verify database schema in `docs/planning/db.sql`
+   - [ ] Check existing utilities in `lib/utils/`
+   - [ ] Use type-safe case transformations
+   - [ ] Add logging for data flow tracking
+   - [ ] Handle critical errors first
+
+4. **Common Gotchas**
+   - Always check database schema before adding new fields
+   - Use existing utilities instead of creating new ones
+   - Keep TypeScript types in sync with database schema
+   - Add comprehensive logging for debugging
+   - Transform case at API boundaries, not in business logic
+
+5. **Debugging Strategy**
+   - Check schema first
+   - Verify case transformation
+   - Follow data flow through logs
+   - Handle database constraints
+   - Use TypeScript for early error catching
 
 // ... existing code ... 

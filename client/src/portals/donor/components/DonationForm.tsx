@@ -50,6 +50,19 @@ export function DonationForm({ onSubmit, isSubmitting = false }: DonationFormPro
   const [foodTypes, setFoodTypes] = React.useState<Array<{ id: string; name: string }>>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
+  // Calculate default pickup window times
+  const defaultStartTime = React.useMemo(() => {
+    const now = new Date();
+    return now.toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:mm
+  }, []);
+
+  const defaultEndTime = React.useMemo(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(12, 0, 0, 0); // Set to noon tomorrow
+    return tomorrow.toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:mm
+  }, []);
+
   React.useEffect(() => {
     const fetchFoodTypes = async () => {
       try {
@@ -85,6 +98,12 @@ export function DonationForm({ onSubmit, isSubmitting = false }: DonationFormPro
     formState: { errors },
   } = useForm<DonationFormData>({
     resolver: zodResolver(donationSchema),
+    defaultValues: {
+      pickupWindow: {
+        startTime: defaultStartTime,
+        endTime: defaultEndTime
+      }
+    }
   });
 
   if (isLoading) {
