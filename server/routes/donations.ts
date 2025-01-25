@@ -116,10 +116,11 @@ router.get('/', async (req, res) => {
 // POST /donations - Create donation
 router.post('/', validateRequest({ body: donationCreateSchema }), async (req, res) => {
   try {
-    const donation = await api.donations.createDonation(req.body);
+    const { donation, ticket } = await api.donations.createDonationWithTicket(req.body);
     res.status(201).json({ 
       donation,
-      message: 'Donation created successfully'
+      ticket,
+      message: 'Donation created successfully with ticket'
     });
   } catch (error) {
     handleDonationError(error, res);

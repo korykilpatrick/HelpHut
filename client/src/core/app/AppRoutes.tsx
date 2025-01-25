@@ -21,6 +21,7 @@ export function AppRoutes() {
 
       {/* Donor Portal */}
       <Route path="/donor" element={<PortalLayout config={donorPortalConfig}><Outlet /></PortalLayout>}>
+        <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="donate" element={<DonationSubmissionPage />} />
         <Route path="history" element={<DonationListPage />} />

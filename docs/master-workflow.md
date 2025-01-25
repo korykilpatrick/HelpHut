@@ -19,10 +19,12 @@
   - [x] Zod schema implementation
   - [x] Real-time error handling
   - [x] Field requirements and constraints
-- [x] API endpoint for donation creation ✅ (2024-03-20)
+- [ ] API endpoint for donation creation 🚧
   - [x] Basic CRUD operations
   - [x] Input validation
   - [x] Critical error handling (donor validation, food type validation)
+  - [x] Automatic ticket creation on donation submission ✅ (2024-03-20)
+  - [ ] Ticket priority based on donation attributes
 
 ### Donation Management
 - [ ] Donation listing view

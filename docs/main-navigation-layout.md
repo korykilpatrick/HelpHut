@@ -14,28 +14,42 @@
 
 ## 1. Base Components (Atoms)
 - [x] Create reusable primitive components
-  - [x] `BaseButton` - foundation for all buttons
-  - [x] `BaseIcon` - wrapper for all icons (using Lucide React)
-  - [ ] `BaseInput` - foundation for all inputs
-  - [ ] `BaseLink` - foundation for all navigation links
-  - [ ] `BaseText` - typography components
-  - [ ] `BaseBadge` - foundation for notifications, status indicators
-  - [ ] `BaseCard` - container component
+  - [x] `BaseInput` - Form inputs with validation ✅
+  - [x] `BaseLink` - Navigation links with routing ✅
+  - [x] `BaseText` - Typography system ✅
+  - [x] `BaseBadge` - Status indicators ✅
+  - [x] `BaseCard` - Container component ✅
 
 ## 2. Composite Components (Molecules)
-- [x] Build `NavItem` - reusable navigation item
-  - [x] Support for icons
-  - [x] Support for badges
-  - [x] Support for sub-items
-  - [x] Active/hover states
-- [x] Create `MenuGroup` - reusable menu section
-  - [x] Collapsible functionality
-  - [x] Header with icon
-  - [x] Nested navigation support
-- [ ] Build `SearchBar` - reusable search component
-  - [ ] Autocomplete support
-  - [ ] Filtering capabilities
-  - [ ] Results display
+Use base components to build navigation elements:
+```tsx
+// Example NavItem implementation
+const NavItem = ({ to, label, icon, badge }) => (
+  <BaseLink
+    to={to}
+    variant="muted"
+    className="flex items-center py-2 px-3"
+  >
+    {icon}
+    <BaseText size="sm">{label}</BaseText>
+    {badge && (
+      <BaseBadge variant="primary" size="sm">
+        {badge}
+      </BaseBadge>
+    )}
+  </BaseLink>
+);
+
+// Example MenuGroup implementation
+const MenuGroup = ({ title, children }) => (
+  <BaseCard variant="ghost" padding="sm">
+    <BaseText weight="semibold" size="sm" className="mb-2">
+      {title}
+    </BaseText>
+    {children}
+  </BaseCard>
+);
+```
 
 ## 3. Layout Components (Organisms)
 - [x] Create `MainLayout` component
@@ -56,25 +70,34 @@
   - [x] Common functionality wrapper
   - [x] Shared state management
 
-### Donor Portal Implementation
-- [x] Extend base portal template
-- [x] Implement donation-specific navigation items
-- [x] Add donation workflow components
-
-### Volunteer Portal Implementation
-- [ ] Extend base portal template
-- [ ] Implement shift-specific navigation items
-- [ ] Add volunteer workflow components
-
-### Partner Portal Implementation
-- [ ] Extend base portal template
-- [ ] Implement inventory-specific navigation items
-- [ ] Add partner workflow components
-
-### Admin Portal Implementation
-- [ ] Extend base portal template
-- [ ] Implement admin-specific navigation items
-- [ ] Add management workflow components
+### Portal Implementation Pattern
+```tsx
+const PortalLayout = ({ children }) => (
+  <MainLayout
+    sidebar={
+      <Sidebar>
+        <MenuGroup title="Navigation">
+          <NavItem
+            to="/dashboard"
+            label="Dashboard"
+            icon={<DashboardIcon />}
+          />
+          {/* More navigation items */}
+        </MenuGroup>
+      </Sidebar>
+    }
+    header={
+      <TopNav>
+        <PortalSwitcher />
+        <SearchBar />
+        <UserMenu />
+      </TopNav>
+    }
+  >
+    {children}
+  </MainLayout>
+);
+```
 
 ## 5. Shared Features
 - [x] Create `PortalSwitcher` using base components
@@ -88,9 +111,6 @@
 
 ## 7. Responsive Implementation
 - [x] Create responsive utility components
-  - [x] `ResponsiveContainer` (via MainLayout)
-  - [x] `ResponsiveNav` (via TopNav)
-  - [x] `ResponsiveSidebar` (via Sidebar)
 - [x] Implement mobile-first breakpoint system
 - [x] Add touch-friendly interaction patterns
 
@@ -100,11 +120,31 @@
 - [x] Add hover/focus interactions
 - [x] Implement keyboard navigation
 
-## 9. Documentation
-- [x] Document component API
-- [x] Create usage examples
-- [x] Add prop documentation
-- [x] Include composition patterns
+## Component Reuse Guidelines
+1. **Use Base Components First**
+   - Start with base components for all UI elements
+   - Compose more complex components from base ones
+   - Maintain consistent styling and behavior
+
+2. **Navigation Patterns**
+   - Use `BaseLink` for all navigation
+   - Wrap in `NavItem` for consistent styling
+   - Group related items in `MenuGroup`
+
+3. **Layout Structure**
+   - Use `BaseCard` for content containers
+   - Apply consistent padding and spacing
+   - Follow responsive design patterns
+
+4. **Typography and Visual Hierarchy**
+   - Use `BaseText` for all text content
+   - Apply consistent size and weight scales
+   - Maintain readable contrast ratios
+
+5. **Status and Feedback**
+   - Use `BaseBadge` for status indicators
+   - Show loading states consistently
+   - Provide clear feedback for actions
 
 ## Implementation Order
 1. ✅ Base Components

@@ -38,6 +38,56 @@ client/src/
     └── impact-tracking/      # Impact measurement workflow
 ```
 
+## Base Components
+Located in `client/src/shared/components/base/`, these foundational UI components should be used to maintain consistency:
+
+### Available Components
+- `BaseInput`: Form inputs with variants, labels, and error states
+- `BaseLink`: Navigation links with internal/external handling
+- `BaseText`: Typography component with size, weight, and style variants
+- `BaseBadge`: Status indicators and tags with variants
+- `BaseCard`: Container component with header/footer options
+
+### Quick Usage Examples
+```tsx
+// Input with label and error
+<BaseInput
+  label="Email"
+  error={true}
+  helperText="Invalid email format"
+/>
+
+// Internal navigation link
+<BaseLink to="/dashboard" variant="primary">
+  Go to Dashboard
+</BaseLink>
+
+// Text with variants
+<BaseText size="lg" weight="semibold" variant="success">
+  Status: Complete
+</BaseText>
+
+// Badge with icon
+<BaseBadge variant="warning" icon={<AlertIcon />}>
+  Pending Review
+</BaseBadge>
+
+// Card with sections
+<BaseCard
+  header={<h2>Card Title</h2>}
+  footer={<Button>Submit</Button>}
+  variant="elevated"
+>
+  Content goes here
+</BaseCard>
+```
+
+### Component Guidelines
+1. Always use base components for consistent styling
+2. Extend with composition rather than modification
+3. Maintain accessibility features
+4. Follow existing variant patterns
+
 ### Design Principles
 1. **Portal-Based Organization**
    - Each user role has a dedicated portal
@@ -143,7 +193,29 @@ client/src/
   });
   ```
 
-### 4. Error Handling Strategy
+### 4. Ticket Creation Pattern
+- Tickets are created automatically when donations are created
+- Implementation in donation creation route:
+  ```typescript
+  // POST /donations
+  router.post('/', async (req, res, next) => {
+    try {
+      // Create donation and ticket in same transaction
+      const { donation, ticket } = await api.donations.createWithTicket(req.body);
+      res.status(201).json({ donation, ticket });
+    } catch (error) {
+      next(error);
+    }
+  });
+  ```
+- Benefits:
+  - Guaranteed ticket creation
+  - Atomic operations
+  - Clear audit trail
+  - Immediate volunteer matching possible
+  - Simpler state management
+
+### 5. Error Handling Strategy
 - Focus on business-critical errors first
 - Add error handling based on user impact
 - Common error patterns:
@@ -167,7 +239,7 @@ client/src/
   }
   ```
 
-### 5. Case Transformation Rules
+### 6. Case Transformation Rules
 - Routes receive camelCase from clients
 - Database operations use snake_case
 - Case transformation is automatic via middleware

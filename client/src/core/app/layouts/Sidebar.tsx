@@ -38,7 +38,7 @@ const portalNavigation: Record<string, NavSection[]> = {
     {
       title: 'Overview',
       items: [
-        { icon: Home, label: 'Dashboard', to: '/donor' },
+        { icon: Home, label: 'Dashboard', to: '/donor/dashboard' },
         { icon: Package, label: 'My Donations', to: '/donor/donations' },
         { icon: Calendar, label: 'Schedule', to: '/donor/schedule' },
       ],
