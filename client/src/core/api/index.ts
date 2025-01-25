@@ -73,6 +73,10 @@ export const api = {
     deleteDonation: (id: string) =>
       axiosInstance.delete(`/donations/${id}`),
   },
+  donors: {
+    list: () => axiosInstance.get('/donors'),
+    get: (id: string) => axiosInstance.get(`/donors/${id}`),
+  },
   foodTypes: {
     list: () => axiosInstance.get('/food-types'),
   },

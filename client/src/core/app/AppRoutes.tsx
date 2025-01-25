@@ -5,11 +5,9 @@ import { HomePage } from '../../portals/home/pages/HomePage';
 import { LoginPage } from '../../portals/auth/pages/LoginPage';
 import { SignupPage } from '../../portals/auth/pages/SignupPage';
 import { donorPortalConfig } from '../../portals/donor/config';
-
-// Temporary mock pages for testing
-const DashboardPage = () => <div className="p-4">Dashboard Content</div>;
-const DonationSubmissionPage = () => <div className="p-4">Donation Submission Content</div>;
-const DonationListPage = () => <div className="p-4">Donation List Content</div>;
+import { DashboardPage } from '../../portals/donor/pages/DashboardPage';
+import { DonationSubmissionPage } from '../../portals/donor/pages/DonationSubmissionPage';
+import { DonationListPage } from '../../portals/donor/pages/DonationListPage';
 
 export function AppRoutes() {
   return (

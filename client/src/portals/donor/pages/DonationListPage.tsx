@@ -3,11 +3,14 @@ import { DonationListView } from '../components/DonationListView';
 
 export function DonationListPage() {
   return (
-    <div>
+    <div className="container mx-auto py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Donation History</h1>
-        <p className="mt-1 text-gray-600">View and manage your donations</p>
+        <h1 className="text-3xl font-bold">Donation History</h1>
+        <p className="mt-2 text-muted-foreground">
+          View and manage your food donations.
+        </p>
       </div>
+
       <DonationListView />
     </div>
   );
