@@ -84,6 +84,7 @@ export type Database = {
           food_type_id: string | null
           id: string
           is_fragile: boolean
+          notes: string | null
           pickup_window_end: string
           pickup_window_start: string
           quantity: number
@@ -102,6 +103,7 @@ export type Database = {
           food_type_id?: string | null
           id?: string
           is_fragile?: boolean
+          notes?: string | null
           pickup_window_end: string
           pickup_window_start: string
           quantity?: number
@@ -120,6 +122,7 @@ export type Database = {
           food_type_id?: string | null
           id?: string
           is_fragile?: boolean
+          notes?: string | null
           pickup_window_end?: string
           pickup_window_start?: string
           quantity?: number

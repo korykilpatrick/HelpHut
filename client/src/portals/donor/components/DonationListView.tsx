@@ -83,17 +83,69 @@ export function DonationListView() {
     end: '',
   });
 
-  // Fetch donations with filters
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['donations', page, status, searchQuery, dateRange],
+  // Fetch food types
+  const { data: foodTypesData } = useQuery({
+    queryKey: ['foodTypes'],
     queryFn: async () => {
-      console.log('Fetching donations with params:', {
-        page,
-        status,
-        searchQuery,
-        dateRange
-      });
+      const response = await api.foodTypes.list();
+      return response.data.foodTypes;
+    },
+  });
 
+  // Create food type map for quick lookups
+  const foodTypeMap = React.useMemo(() => {
+    if (!foodTypesData) return {};
+    return foodTypesData.reduce((acc: Record<string, string>, foodType: any) => {
+      acc[foodType.id] = foodType.name;
+      return acc;
+    }, {});
+  }, [foodTypesData]);
+
+  // Format date helper
+  const formatDate = (dateStr: string | { value?: string } | null) => {
+    try {
+      // If it's null or undefined, return placeholder
+      if (!dateStr) {
+        return 'Not specified';
+      }
+
+      // If it's an empty object, return placeholder
+      if (typeof dateStr === 'object' && Object.keys(dateStr).length === 0) {
+        return 'Not specified';
+      }
+
+      // Handle string dates
+      const dateValue = typeof dateStr === 'string' ? dateStr : null;
+      if (dateValue) {
+        const date = new Date(dateValue);
+        if (!isNaN(date.getTime())) {
+          return date.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          });
+        }
+      }
+      
+      return 'Invalid Date';
+    } catch {
+      return 'Invalid Date';
+    }
+  };
+
+  // Debounce search query
+  const debouncedSearchQuery = React.useMemo(() => {
+    const timeoutId = setTimeout(() => searchQuery, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  // Fetch donations with filters
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['donations', page, status, debouncedSearchQuery, dateRange],
+    queryFn: async () => {
       try {
         const offset = (page - 1) * ITEMS_PER_PAGE;
         const params = {
@@ -105,42 +157,52 @@ export function DonationListView() {
           endDate: dateRange.end || undefined,
         };
 
-        console.log('API request params:', params);
         const response = await api.donations.getDonations(params);
+        
         console.log('API response:', response);
 
-        if (!response.data?.donations) {
-          console.error('Invalid response format:', response);
+        // Validate response structure
+        if (!response?.data?.donations?.donations || !Array.isArray(response.data.donations.donations)) {
           throw new Error('Invalid response format from server');
         }
 
-        return response.data;
+        return {
+          donations: response.data.donations.donations,
+          total: response.data.donations.total || response.data.donations.donations.length,
+        };
       } catch (error) {
         console.error('Error fetching donations:', error);
         throw error;
       }
     },
-    // Add retry and stale time configuration
     retry: 1,
-    staleTime: 30000
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   // Handle error state
   React.useEffect(() => {
     if (error) {
-      console.error('Query error:', error);
       toast.error('Failed to load donations. Please try again.');
     }
   }, [error]);
 
-  // Early return for error state with retry button
+  // Reset page when filters change
+  React.useEffect(() => {
+    setPage(1);
+  }, [status, searchQuery, dateRange]);
+
+  const handleRetry = React.useCallback(() => {
+    refetch();
+  }, [refetch]);
+
   if (error) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500 mb-4">Failed to load donations</p>
         <Button
           variant="secondary"
-          onClick={() => window.location.reload()}
+          onClick={handleRetry}
         >
           Retry
         </Button>
@@ -231,14 +293,13 @@ export function DonationListView() {
                 return (
                   <tr key={donation.id} className={`${statusStyles.row} transition-colors duration-150`}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {donation.foodTypeId}
+                      {foodTypeMap[donation.foodTypeId] || 'Unknown Food Type'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {donation.quantity} {donation.unit}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(donation.pickupWindowStart).toLocaleString()} -
-                      {new Date(donation.pickupWindowEnd).toLocaleString()}
+                      {formatDate(donation.pickupWindowStart)} - {formatDate(donation.pickupWindowEnd)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles.badge}`}>
