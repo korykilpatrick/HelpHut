@@ -4,11 +4,8 @@ import { useLocation } from 'react-router-dom';
 import { MainLayout } from '../../../core/app/layouts/MainLayout';
 import { useAppDispatch } from '../../../core/store/hooks';
 import { setCurrentPortal } from '../../../core/store/slices/navigationSlice';
-
-interface PortalConfig {
-  id: string;
-  title: string;
-}
+import { type PortalConfig } from '../../../portals/types';
+import type { NavigationState } from '../../../core/store/slices/navigationSlice';
 
 interface PortalLayoutProps {
   children?: React.ReactNode;
@@ -21,8 +18,10 @@ export function PortalLayout({ children, config }: PortalLayoutProps) {
 
   // Set the current portal in Redux when the component mounts or config changes
   useEffect(() => {
-    dispatch(setCurrentPortal(config.id as any)); // TODO: Fix type
-  }, [dispatch, config.id]);
+    // Convert role to the format expected by NavigationState
+    const portalId = config.role.toLowerCase() as NavigationState['currentPortal'];
+    dispatch(setCurrentPortal(portalId));
+  }, [dispatch, config.role]);
 
   return <MainLayout>{children}</MainLayout>;
 } 

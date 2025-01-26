@@ -9,9 +9,14 @@ import { volunteerPortalConfig } from '../../portals/volunteer/config';
 import { DashboardPage as DonorDashboard } from '../../portals/donor/pages/DashboardPage';
 import { DonationSubmissionPage } from '../../portals/donor/pages/DonationSubmissionPage';
 import { DonationListPage } from '../../portals/donor/pages/DonationListPage';
-import { DashboardPage as VolunteerDashboard } from '../../portals/volunteer/pages/DashboardPage';
 import { AvailablePickupsPage } from '../../portals/volunteer/pages/AvailablePickupsPage';
 import { SchedulePage } from '../../portals/volunteer/pages/SchedulePage';
+import { DeliveryHistoryPage } from '../../portals/volunteer/pages/DeliveryHistoryPage';
+import { ImpactPage } from '../../portals/volunteer/pages/ImpactPage';
+import { CoverageAreasPage } from '../../portals/volunteer/pages/CoverageAreasPage';
+import { LeaderboardPage } from '../../portals/volunteer/pages/LeaderboardPage';
+import { ProfilePage } from '../../portals/volunteer/pages/ProfilePage';
+import { DashboardPage } from '../../portals/volunteer/pages/DashboardPage';
 
 export function AppRoutes() {
   return (
@@ -34,9 +39,15 @@ export function AppRoutes() {
       {/* Volunteer Portal */}
       <Route path="/volunteer" element={<PortalLayout config={volunteerPortalConfig}><Outlet /></PortalLayout>}>
         <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<VolunteerDashboard />} />
-        <Route path="pickups" element={<AvailablePickupsPage />} />
-        <Route path="schedule" element={<SchedulePage />} />
+        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="profile" element={<ProfilePage />} />
+        <Route path="pickups/available" element={<AvailablePickupsPage />} />
+        <Route path="deliveries/active" element={<SchedulePage />} />
+        <Route path="history" element={<DeliveryHistoryPage />} />
+        <Route path="impact" element={<ImpactPage />} />
+        <Route path="zones" element={<CoverageAreasPage />} />
+        <Route path="leaderboard" element={<LeaderboardPage />} />
+        <Route path="availability" element={<SchedulePage />} />
       </Route>
 
       {/* Partner Portal */}
