@@ -25,7 +25,9 @@ interface PortalFeature {
 // Group features by section
 const groupFeatures = (features: PortalFeature[]) => {
   const groups = {
-    overview: features.filter(f => ['dashboard', 'profile'].includes(f.id)),
+    overview: features.filter(f => ['dashboard', 'inventory', 'requests'].includes(f.id)),
+    planning: features.filter(f => ['schedule', 'impact'].includes(f.id)),
+    relationships: features.filter(f => ['donors', 'requirements'].includes(f.id)),
     foodRescue: features.filter(f => ['available-pickups', 'active-deliveries', 'delivery-history', 'quick-donate', 'donation-history'].includes(f.id)),
     schedule: features.filter(f => ['availability', 'coverage-areas'].includes(f.id)),
     impact: features.filter(f => ['impact', 'leaderboard', 'recipients'].includes(f.id)),

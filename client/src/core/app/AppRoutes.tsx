@@ -19,6 +19,8 @@ import { ProfilePage } from '../../portals/volunteer/pages/ProfilePage';
 import { DashboardPage as VolunteerDashboard } from '../../portals/volunteer/pages/DashboardPage';
 import { partnerPortalConfig } from '../../portals/partner/config';
 import { DashboardPage as PartnerDashboard } from '../../portals/partner/pages/DashboardPage';
+import { InventoryPage } from '../../portals/partner/pages/InventoryPage';
+import { RequestsPage } from '../../portals/partner/pages/RequestsPage';
 
 export function AppRoutes() {
   return (
@@ -56,8 +58,8 @@ export function AppRoutes() {
       <Route path="/partner" element={<PortalLayout config={partnerPortalConfig}><Outlet /></PortalLayout>}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<PartnerDashboard />} />
-        <Route path="inventory" element={<Navigate to="/partner/dashboard" replace />} />
-        <Route path="requests" element={<Navigate to="/partner/dashboard" replace />} />
+        <Route path="inventory" element={<InventoryPage />} />
+        <Route path="requests" element={<RequestsPage />} />
         <Route path="schedule" element={<Navigate to="/partner/dashboard" replace />} />
         <Route path="impact" element={<Navigate to="/partner/dashboard" replace />} />
         <Route path="donors" element={<Navigate to="/partner/dashboard" replace />} />
