@@ -2,6 +2,7 @@ import * as React from 'react';
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { User, Settings, LogOut } from 'lucide-react';
 import { cn } from '../../../core/utils/cn';
+import { useAuth } from '../../../core/auth/useAuth';
 
 interface UserMenuProps {
   user: {
@@ -12,11 +13,21 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ user }: UserMenuProps) {
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   return (
     <DropdownMenuPrimitive.Root>
       <DropdownMenuPrimitive.Trigger asChild>
         <button
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-muted"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors"
           aria-label="Open user menu"
         >
           {user.avatar ? (
@@ -30,23 +41,16 @@ export function UserMenu({ user }: UserMenuProps) {
           )}
         </button>
       </DropdownMenuPrimitive.Trigger>
+
       <DropdownMenuPrimitive.Portal>
         <DropdownMenuPrimitive.Content
-          className={cn(
-            'z-50 min-w-[240px] rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-none',
-            'data-[state=open]:animate-in data-[state=closed]:animate-out',
-            'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-            'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
-            'data-[side=bottom]:slide-in-from-top-2',
-            'data-[side=left]:slide-in-from-right-2',
-            'data-[side=right]:slide-in-from-left-2',
-            'data-[side=top]:slide-in-from-bottom-2',
-          )}
+          className="z-[9999] min-w-[240px] overflow-hidden rounded-md border bg-white p-1 shadow-md"
           sideOffset={5}
           align="end"
+          forceMount
         >
-          <div className="flex items-center gap-x-2 p-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+          <div className="flex items-center gap-x-3 p-3 border-b border-gray-200 bg-white">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
               {user.avatar ? (
                 <img
                   src={user.avatar}
@@ -54,35 +58,29 @@ export function UserMenu({ user }: UserMenuProps) {
                   className="h-10 w-10 rounded-full object-cover"
                 />
               ) : (
-                <User className="h-6 w-6 text-muted-foreground" />
+                <User className="h-6 w-6 text-gray-600" />
               )}
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-medium">{user.name}</span>
-              <span className="text-xs text-muted-foreground">{user.email}</span>
+              <span className="text-sm font-semibold text-gray-900">{user.name}</span>
+              <span className="text-xs text-gray-500">{user.email}</span>
             </div>
           </div>
-          <DropdownMenuPrimitive.Separator className="my-1 h-px bg-muted" />
-          <DropdownMenuPrimitive.Item
-            className={cn(
-              'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors',
-              'focus:bg-accent focus:text-accent-foreground',
-              'data-[disabled]:pointer-events-none data-[disabled]:opacity-50'
-            )}
-          >
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
-          </DropdownMenuPrimitive.Item>
-          <DropdownMenuPrimitive.Item
-            className={cn(
-              'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors',
-              'focus:bg-accent focus:text-accent-foreground',
-              'data-[disabled]:pointer-events-none data-[disabled]:opacity-50'
-            )}
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Log out</span>
-          </DropdownMenuPrimitive.Item>
+          <div className="bg-white p-1">
+            <DropdownMenuPrimitive.Item
+              className="flex w-full cursor-pointer items-center rounded-sm px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <Settings className="mr-3 h-4 w-4 text-gray-500" />
+              <span>Settings</span>
+            </DropdownMenuPrimitive.Item>
+            <DropdownMenuPrimitive.Item
+              onClick={handleLogout}
+              className="flex w-full cursor-pointer items-center rounded-sm px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+            >
+              <LogOut className="mr-3 h-4 w-4 text-red-500" />
+              <span>Log out</span>
+            </DropdownMenuPrimitive.Item>
+          </div>
         </DropdownMenuPrimitive.Content>
       </DropdownMenuPrimitive.Portal>
     </DropdownMenuPrimitive.Root>
