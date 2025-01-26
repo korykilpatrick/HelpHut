@@ -3,87 +3,50 @@ import { useLocation } from 'react-router-dom';
 import { cn } from '../../utils/cn';
 import { useAppSelector } from '../../store/hooks';
 import { NavItem } from '../../../shared/components/navigation/NavItem';
-import { MenuGroup } from '../../../shared/components/navigation/MenuGroup';
-import {
-  Home,
-  Package,
-  Calendar,
-  Users,
-  BarChart,
-  Settings,
-  Truck,
-  MapPin,
-  Clock,
-  type LucideIcon
-} from 'lucide-react';
+import { Settings, type LucideIcon } from 'lucide-react';
+import { volunteerPortalConfig } from '../../../portals/volunteer/config';
+import { donorPortalConfig } from '../../../portals/donor/config';
+import { type PortalConfig } from '../../../portals/types';
+import { useAuth } from '../../auth/useAuth';
 
 interface SidebarProps {
   className?: string;
 }
 
-interface NavSection {
+interface PortalFeature {
+  id: string;
   title: string;
-  items: Array<{
-    icon: LucideIcon;
-    label: string;
-    to: string;
-    badge?: string | number;
-    items?: Array<{
-      label: string;
-      to: string;
-      badge?: string | number;
-    }>;
-  }>;
+  description: string;
+  icon: LucideIcon;
+  path: string;
 }
 
-const portalNavigation: Record<string, NavSection[]> = {
-  donor: [
-    {
-      title: 'Overview',
-      items: [
-        { icon: Home, label: 'Dashboard', to: '/donor/dashboard' },
-        { icon: Package, label: 'My Donations', to: '/donor/donations' },
-        { icon: Calendar, label: 'Schedule', to: '/donor/schedule' },
-      ],
-    },
-    {
-      title: 'Reports',
-      items: [
-        { icon: BarChart, label: 'Impact', to: '/donor/impact' },
-        { icon: Users, label: 'Recipients', to: '/donor/recipients' },
-      ],
-    },
-  ],
-  volunteer: [
-    {
-      title: 'Food Rescue',
-      items: [
-        { icon: Home, label: 'Dashboard', to: '/volunteer/dashboard' },
-        { icon: Truck, label: 'Available Pickups', to: '/volunteer/pickups' },
-        { icon: Clock, label: 'Active Deliveries', to: '/volunteer/active' },
-      ],
-    },
-    {
-      title: 'Schedule',
-      items: [
-        { icon: Calendar, label: 'My Schedule', to: '/volunteer/schedule' },
-        { icon: MapPin, label: 'Coverage Area', to: '/volunteer/coverage' },
-      ],
-    },
-    {
-      title: 'Reports',
-      items: [
-        { icon: BarChart, label: 'My Impact', to: '/volunteer/impact' },
-      ],
-    },
-  ],
+// Group features by section
+const groupFeatures = (features: PortalFeature[]) => {
+  const groups = {
+    overview: features.filter(f => ['dashboard', 'profile'].includes(f.id)),
+    foodRescue: features.filter(f => ['available-pickups', 'active-deliveries', 'delivery-history', 'quick-donate', 'donation-history'].includes(f.id)),
+    schedule: features.filter(f => ['availability', 'coverage-areas'].includes(f.id)),
+    impact: features.filter(f => ['impact', 'leaderboard', 'recipients'].includes(f.id)),
+  };
+
+  return Object.entries(groups).filter(([_, items]) => items.length > 0);
+};
+
+const portalConfigs: Record<'donor' | 'volunteer', PortalConfig> = {
+  donor: donorPortalConfig,
+  volunteer: volunteerPortalConfig,
 };
 
 export function Sidebar({ className }: SidebarProps) {
   const location = useLocation();
-  const currentPortal = useAppSelector((state) => state.navigation.currentPortal);
+  const { user } = useAuth();
   
-  const navigation = currentPortal ? portalNavigation[currentPortal] : [];
+  const portalConfig = user && (user.role === 'donor' || user.role === 'volunteer') 
+    ? portalConfigs[user.role] 
+    : null;
+  const features = (portalConfig?.features || []) as PortalFeature[];
+  const groupedFeatures = groupFeatures(features);
 
   return (
     <aside className={cn('flex flex-col gap-y-4 p-4', className)}>
@@ -92,41 +55,25 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
 
       <nav className="flex flex-1 flex-col gap-y-6">
-        {navigation.map((section) => (
-          <div key={section.title} className="flex flex-col gap-y-2">
-            <div className="px-3 text-xs font-medium text-muted-foreground">
-              {section.title}
+        {groupedFeatures.map(([section, items]) => (
+          <div key={section} className="space-y-1">
+            <div className="px-2 py-1">
+              <h3 className="text-sm font-medium text-muted-foreground capitalize">
+                {section.replace(/([A-Z])/g, ' $1').trim()}
+              </h3>
             </div>
-            {section.items.map((item) => (
-              item.items ? (
-                <MenuGroup
-                  key={item.to}
-                  icon={item.icon}
-                  title={item.label}
-                  badge={item.badge}
-                >
-                  {item.items.map((subItem) => (
-                    <NavItem
-                      key={subItem.to}
-                      label={subItem.label}
-                      to={subItem.to}
-                      badge={subItem.badge}
-                      level={1}
-                      isActive={location.pathname === subItem.to}
-                    />
-                  ))}
-                </MenuGroup>
-              ) : (
+            {items.map((feature) => {
+              const Icon = feature.icon;
+              return (
                 <NavItem
-                  key={item.to}
-                  icon={item.icon}
-                  label={item.label}
-                  to={item.to}
-                  badge={item.badge}
-                  isActive={location.pathname === item.to}
+                  key={feature.id}
+                  icon={Icon}
+                  label={feature.title}
+                  to={feature.path}
+                  isActive={location.pathname === feature.path}
                 />
-              )
-            ))}
+              );
+            })}
           </div>
         ))}
       </nav>

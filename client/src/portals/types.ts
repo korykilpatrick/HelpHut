@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
 import { type UserRole } from '../core/auth/types';
+import { type LucideIcon } from 'lucide-react';
 
 export interface PortalConfig {
   role: UserRole;
@@ -12,6 +13,6 @@ export interface PortalFeature {
   id: string;
   title: string;
   description: string;
-  icon: ReactNode;
+  icon: LucideIcon;
   path: string;
 } 
