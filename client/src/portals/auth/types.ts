@@ -27,6 +27,7 @@ export const volunteerSignupSchema = baseSignupSchema.extend({
 export const partnerSignupSchema = baseSignupSchema.extend({
   role: z.literal('Partner'),
   organizationName: z.string().min(2, 'Organization name must be at least 2 characters'),
+  contactEmail: z.string().email('Invalid contact email format'),
   phone: z.string().regex(/^[0-9+\-\(\)\s]{7,}$/, 'Invalid phone number format'),
 });
 

@@ -111,12 +111,42 @@ router.post('/login', async (req, res) => {
         .select('*')
         .eq('user_id', userData.id)
         .single();
+      
       if (partnerError) {
-        console.error('Error fetching partner data:', partnerError);
-        throw partnerError;
+        if (partnerError.code === 'PGRST116') { // Not found
+          console.log('No partner record found, creating placeholder...');
+          const email = data.user?.email;
+          if (!email) {
+            throw new Error('User email is required for partner record');
+          }
+
+          const { data: newPartner, error: createError } = await supabase
+            .from('partners')
+            .insert({
+              name: userData.display_name,
+              contact_email: email,
+              contact_phone: '0000000000',
+              max_capacity: 0,
+              capacity: 0,
+              user_id: userData.id
+            })
+            .select()
+            .single();
+            
+          if (createError) {
+            console.error('Error creating placeholder partner record:', createError);
+            throw createError;
+          }
+          orgData = newPartner;
+          console.log('Created placeholder partner record:', { id: newPartner.id });
+        } else {
+          console.error('Error fetching partner data:', partnerError);
+          throw partnerError;
+        }
+      } else {
+        orgData = partnerData;
+        console.log('Partner data fetched:', { id: partnerData.id, name: partnerData.name });
       }
-      orgData = partnerData;
-      console.log('Partner data fetched:', { id: partnerData.id, name: partnerData.name });
     }
 
     console.log('Login completed successfully');
@@ -285,6 +315,27 @@ router.post('/signup', async (req, res) => {
       if (volunteerError) {
         console.error('Error creating volunteer record:', volunteerError);
         throw volunteerError;
+      }
+    } else if (role === 'Partner') {
+      console.log('Creating partner record...');
+      const email = req.body.contact_email.trim();
+      console.log('Contact email value:', JSON.stringify(req.body.contact_email));
+      
+      // Test with a simpler pattern that matches PostgreSQL's behavior
+      const { error: partnerError } = await supabase
+        .from('partners')
+        .insert({
+          user_id: authData.user.id,
+          name: organization_name || name,
+          contact_email: email.toLowerCase(), // ensure case-insensitive match
+          contact_phone: phone || '0000000000',
+          max_capacity: 0,
+          capacity: 0
+        });
+      
+      if (partnerError) {
+        console.error('Error creating partner record:', partnerError);
+        throw partnerError;
       }
     }
 

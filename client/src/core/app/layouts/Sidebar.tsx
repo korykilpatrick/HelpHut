@@ -6,6 +6,7 @@ import { NavItem } from '../../../shared/components/navigation/NavItem';
 import { Settings, type LucideIcon } from 'lucide-react';
 import { volunteerPortalConfig } from '../../../portals/volunteer/config';
 import { donorPortalConfig } from '../../../portals/donor/config';
+import { partnerPortalConfig } from '../../../portals/partner/config';
 import { type PortalConfig } from '../../../portals/types';
 import { useAuth } from '../../auth/useAuth';
 
@@ -33,16 +34,17 @@ const groupFeatures = (features: PortalFeature[]) => {
   return Object.entries(groups).filter(([_, items]) => items.length > 0);
 };
 
-const portalConfigs: Record<'donor' | 'volunteer', PortalConfig> = {
+const portalConfigs: Record<'donor' | 'volunteer' | 'partner', PortalConfig> = {
   donor: donorPortalConfig,
   volunteer: volunteerPortalConfig,
+  partner: partnerPortalConfig,
 };
 
 export function Sidebar({ className }: SidebarProps) {
   const location = useLocation();
   const { user } = useAuth();
   
-  const portalConfig = user && (user.role === 'donor' || user.role === 'volunteer') 
+  const portalConfig = user && (user.role === 'donor' || user.role === 'volunteer' || user.role === 'partner') 
     ? portalConfigs[user.role] 
     : null;
   const features = (portalConfig?.features || []) as PortalFeature[];

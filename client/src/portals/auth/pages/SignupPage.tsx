@@ -17,6 +17,20 @@ const roleOptions = [
   { value: 'Partner', label: 'Partner Organization' }
 ];
 
+const signupSchema = z.object({
+  email: z.string().email('Invalid email format'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  role: z.enum(['Donor', 'Volunteer', 'Partner']),
+  name: z.string().min(1, 'Name is required'),
+  organizationName: z.string().optional(),
+  contactEmail: z.string().email('Invalid email format').optional(),
+  phone: z.string().optional(),
+  businessHours: z.string().optional(),
+  vehicleType: z.string().optional(),
+});
+
+type SignupForm = z.infer<typeof signupSchema>;
+
 export function SignupPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -163,6 +177,13 @@ export function SignupPage() {
                   error={getErrorMessage('organizationName')}
                   registration={register('organizationName')}
                   placeholder="Your organization's name"
+                />
+                <Input
+                  label="Organization Contact Email"
+                  type="email"
+                  error={getErrorMessage('contactEmail')}
+                  registration={register('contactEmail')}
+                  placeholder="contact@organization.com"
                 />
                 <Input
                   label="Phone Number"

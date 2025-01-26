@@ -15,10 +15,8 @@ export function createApiRouter() {
   // Apply case transformation middleware to all API routes
   router.use(caseTransformMiddleware);
 
-  // Mount auth routes first (no case transform needed for auth)
+  // Mount all API routes
   router.use('/auth', authRouter);
-
-  // Mount feature-specific routers
   router.use('/users', usersRouter);
   router.use('/donors', donorsRouter);
   router.use('/volunteers', volunteersRouter);
