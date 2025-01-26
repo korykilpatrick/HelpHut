@@ -11,6 +11,9 @@ import {
   Users,
   BarChart,
   Settings,
+  Truck,
+  MapPin,
+  Clock,
   type LucideIcon
 } from 'lucide-react';
 
@@ -51,7 +54,29 @@ const portalNavigation: Record<string, NavSection[]> = {
       ],
     },
   ],
-  // Add other portal navigations here
+  volunteer: [
+    {
+      title: 'Food Rescue',
+      items: [
+        { icon: Home, label: 'Dashboard', to: '/volunteer/dashboard' },
+        { icon: Truck, label: 'Available Pickups', to: '/volunteer/pickups' },
+        { icon: Clock, label: 'Active Deliveries', to: '/volunteer/active' },
+      ],
+    },
+    {
+      title: 'Schedule',
+      items: [
+        { icon: Calendar, label: 'My Schedule', to: '/volunteer/schedule' },
+        { icon: MapPin, label: 'Coverage Area', to: '/volunteer/coverage' },
+      ],
+    },
+    {
+      title: 'Reports',
+      items: [
+        { icon: BarChart, label: 'My Impact', to: '/volunteer/impact' },
+      ],
+    },
+  ],
 };
 
 export function Sidebar({ className }: SidebarProps) {

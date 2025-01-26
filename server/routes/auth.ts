@@ -248,37 +248,44 @@ router.post('/signup', async (req, res) => {
       console.log(`User profile not found yet, attempt ${attempts + 1} of ${maxAttempts}`, {
         lastError: error
       });
-      await new Promise(resolve => setTimeout(resolve, 1000));
       attempts++;
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     if (!userData) {
-      console.error('User profile was not created in time', {
-        userId: authData.user.id,
-        attempts,
-        metadata: authData.user.user_metadata
-      });
-      await supabaseAuth.auth.admin.deleteUser(authData.user.id);
-      throw new Error('Failed to create user profile');
+      throw new Error('Failed to find user profile after signup');
     }
 
-    // Create or update organization-specific record
+    // Create organization record based on role
     if (role === 'Donor') {
       console.log('Creating donor record...');
       const { error: donorError } = await supabase
         .from('donors')
-        .upsert({
-          user_id: userData.id,
-          organization_name: organization_name,
-          phone,
-          business_hours
+        .insert({
+          user_id: authData.user.id,
+          organization_name: organization_name || name,
+          phone: phone || '0000000000',
+          business_hours: business_hours || null
         });
-
+      
       if (donorError) {
         console.error('Error creating donor record:', donorError);
         throw donorError;
       }
-      console.log('Donor record created successfully');
+    } else if (role === 'Volunteer') {
+      console.log('Creating volunteer record...');
+      const { error: volunteerError } = await supabase
+        .from('volunteers')
+        .insert({
+          user_id: authData.user.id,
+          phone: phone || '0000000000',
+          vehicle_type: req.body.vehicle_type || null
+        });
+      
+      if (volunteerError) {
+        console.error('Error creating volunteer record:', volunteerError);
+        throw volunteerError;
+      }
     }
 
     console.log('Signup completed successfully');

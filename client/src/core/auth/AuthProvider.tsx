@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import type { AuthUser, AuthState } from './types';
+import type { AuthUser, AuthState, UserRole } from './types';
 import axios from 'axios';
 
 interface AuthContextType extends AuthState {
@@ -11,6 +11,36 @@ interface AuthContextType extends AuthState {
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 const PUBLIC_PATHS = ['/login', '/signup', '/forgot-password'];
+
+// Helper to get organization ID based on role
+const getOrganizationId = (user: any) => {
+  switch (user.role.toLowerCase()) {
+    case 'donor':
+      return user.donor?.id;
+    case 'volunteer':
+      return user.volunteer?.id;
+    case 'partner':
+      return user.partner?.id;
+    default:
+      return undefined;
+  }
+};
+
+// Helper to get default redirect path based on role
+const getDefaultPath = (role: UserRole) => {
+  switch (role) {
+    case 'donor':
+      return '/donor/dashboard';
+    case 'volunteer':
+      return '/volunteer/dashboard';
+    case 'partner':
+      return '/partner/dashboard';
+    case 'admin':
+      return '/admin/dashboard';
+    default:
+      return '/';
+  }
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -51,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: user.email,
               role: user.role.toLowerCase(),
               name: user.name || user.email,
-              organizationId: user.donor?.id
+              organizationId: getOrganizationId(user)
             },
             isLoading: false
           });
@@ -93,10 +123,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         sessionStorage.setItem('redirectTo', currentPath);
         navigate('/login', { replace: true });
       } else if (authState.user && isPublicPath) {
-        const redirectTo = sessionStorage.getItem('redirectTo') || '/';
+        const savedRedirect = sessionStorage.getItem('redirectTo');
+        const defaultPath = getDefaultPath(authState.user.role);
+        const redirectTo = savedRedirect || defaultPath;
+        
         console.log('-> Redirecting to:', redirectTo);
         sessionStorage.removeItem('redirectTo');
         navigate(redirectTo, { replace: true });
+      } else if (authState.user && currentPath === '/') {
+        navigate(getDefaultPath(authState.user.role), { replace: true });
       }
     }
   }, [authState, initialized, location.pathname, navigate]);
@@ -119,14 +154,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('auth', JSON.stringify({ token: session.token }));
       axios.defaults.headers.common['Authorization'] = `Bearer ${session.token}`;
       
+      const authUser: AuthUser = {
+        id: user.id,
+        email: user.email,
+        role: user.role.toLowerCase(),
+        name: user.name || email,
+        organizationId: getOrganizationId(user)
+      };
+      
       setAuthState({ 
-        user: {
-          id: user.id,
-          email: user.email,
-          role: user.role.toLowerCase(),
-          name: user.name || email,
-          organizationId: user.donor?.id // For donors, use the donor record ID
-        }, 
+        user: authUser,
         isLoading: false 
       });
     } catch (error) {
