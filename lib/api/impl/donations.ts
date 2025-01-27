@@ -1,8 +1,10 @@
 import { BaseApiImpl } from './base';
-import type { Donation, DonationCreate, DonationUpdate, Ticket, TicketStatus, TicketPriority } from '../generated/src/models';
-import { toSnakeCase } from '../../utils/case-transform';
+import type { Ticket, TicketStatus, TicketPriority } from '../generated/src/models';
+import { toCamelCase, toSnakeCase } from '../../utils/case-transform';
 import { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../../db/types';
+import type { Donation, DonationCreate, DonationUpdate } from '../generated/src/models';
+import { DonationCreateToJSON } from '../generated/src/models';
 
 // Custom error classes for donation-specific errors
 export class DonationNotFoundError extends Error {
@@ -29,12 +31,90 @@ export class DonationConflictError extends Error {
   }
 }
 
-// Database row types
-type DbDonation = Database['public']['Tables']['donations']['Row'] & {
-  food_type: Database['public']['Tables']['food_types']['Row'] | null;
+// Database types (snake_case)
+type DbDonation = Database['public']['Tables']['donations']['Row'];
+type DbDonationInsert = Database['public']['Tables']['donations']['Insert'];
+type DbDonationUpdate = Database['public']['Tables']['donations']['Update'] & {
+  status?: string;
+  volunteer_id?: string | null;
 };
-
 type DbTicket = Database['public']['Tables']['tickets']['Row'];
+type DbDonor = Database['public']['Tables']['donors']['Row'];
+
+// API types (camelCase)
+interface AvailablePickup {
+  id: string;
+  donorName: string;
+  pickupLocation: string;
+  deliveryLocation: string;
+  pickupWindow: {
+    start: string;
+    end: string;
+  };
+  foodType: string;
+  quantity: string;
+  distance: number;
+  urgency: 'low' | 'medium' | 'high';
+  requirements: {
+    refrigeration: boolean;
+    freezing: boolean;
+    heavyLifting: boolean;
+  };
+}
+
+interface ActiveDelivery {
+  id: string;
+  status: 'scheduled' | 'in_transit' | 'delivered';
+  pickupLocation: string;
+  deliveryLocation: string;
+  pickupTime: string;
+  foodType: string;
+  quantity: string;
+}
+
+interface DeliveryRecord {
+  id: string;
+  date: string;
+  pickupLocation: string;
+  deliveryLocation: string;
+  foodType: string;
+  quantity: string;
+  impact: {
+    mealsProvided: number;
+    carbonSaved: number;
+  };
+  rating?: {
+    score: number;
+    feedback?: string;
+  };
+}
+
+// API types for donations
+export interface ApiDonationCreate {
+  donorId: string;
+  foodTypeId: string;
+  quantity: number;
+  unit: string;
+  expirationDate?: Date | null;
+  storageRequirements?: string | null;
+  requiresRefrigeration?: boolean;
+  requiresFreezing?: boolean;
+  isFragile?: boolean;
+  requiresHeavyLifting?: boolean;
+  notes?: string | null;
+  pickupWindowStart: Date;
+  pickupWindowEnd: Date;
+}
+
+export type ApiDonation = Required<Omit<ApiDonationCreate, 'expirationDate' | 'storageRequirements' | 'notes'>> & {
+  id: string;
+  expirationDate?: Date | null;
+  storageRequirements?: string | null;
+  notes?: string | null;
+  donatedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export class DonationsApiImpl extends BaseApiImpl {
   async listDonations(params: {
@@ -44,7 +124,7 @@ export class DonationsApiImpl extends BaseApiImpl {
     search?: string;
     startDate?: string;
     endDate?: string;
-  }): Promise<{ donations: Donation[] }> {
+  }): Promise<{ donations: DbDonation[] }> {
     try {
       console.log('Listing donations with params:', params);
       
@@ -57,7 +137,7 @@ export class DonationsApiImpl extends BaseApiImpl {
 
       // Apply filters if provided
       if (params.status) {
-        query = query.eq('status', params.status);
+        query = query.eq('status', toSnakeCase({ status: params.status }).status);
       }
       if (params.startDate) {
         query = query.gte('created_at', params.startDate);
@@ -82,31 +162,14 @@ export class DonationsApiImpl extends BaseApiImpl {
       if (error) throw error;
       if (!data) return { donations: [] };
 
-      const donations = (data as DbDonation[]).map(row => ({
-        id: row.id,
-        foodTypeId: row.food_type_id || '',
-        quantity: row.quantity,
-        unit: row.unit,
-        pickupWindowStart: new Date(row.pickup_window_start),
-        pickupWindowEnd: new Date(row.pickup_window_end),
-        donorId: row.donor_id || '',
-        createdAt: new Date(row.created_at),
-        updatedAt: new Date(row.updated_at),
-        requiresRefrigeration: row.requires_refrigeration,
-        requiresFreezing: row.requires_freezing,
-        isFragile: row.is_fragile,
-        requiresHeavyLifting: row.requires_heavy_lifting,
-        notes: row.notes || undefined
-      }));
-
-      return { donations };
+      return { donations: data as DbDonation[] };
     } catch (error) {
       console.error('Error in listDonations:', error);
       throw error;
     }
   }
 
-  async createDonation(donation: DonationCreate): Promise<Donation> {
+  async createDonation(donation: ApiDonationCreate): Promise<ApiDonation> {
     try {
       // Validate pickup window
       const pickupStart = new Date(donation.pickupWindowStart);
@@ -115,173 +178,113 @@ export class DonationsApiImpl extends BaseApiImpl {
         throw new DonationValidationError('Pickup window end time must be after start time');
       }
 
-      // Transform to snake_case for database
-      const insertData = {
+      // Convert to database format
+      const dbDonation: DbDonationInsert = {
         donor_id: donation.donorId,
         food_type_id: donation.foodTypeId,
         quantity: donation.quantity,
         unit: donation.unit,
-        requires_refrigeration: donation.requiresRefrigeration,
-        requires_freezing: donation.requiresFreezing,
-        is_fragile: donation.isFragile,
-        requires_heavy_lifting: donation.requiresHeavyLifting,
+        expiration_date: donation.expirationDate ? donation.expirationDate.toISOString() : null,
+        storage_requirements: donation.storageRequirements ?? null,
+        requires_refrigeration: donation.requiresRefrigeration ?? false,
+        requires_freezing: donation.requiresFreezing ?? false,
+        is_fragile: donation.isFragile ?? false,
+        requires_heavy_lifting: donation.requiresHeavyLifting ?? false,
         pickup_window_start: pickupStart.toISOString(),
         pickup_window_end: pickupEnd.toISOString(),
-        notes: donation.notes
-      } as Database['public']['Tables']['donations']['Insert'];
+        notes: donation.notes ?? null,
+        donated_at: new Date().toISOString()
+      };
 
       const { data, error } = await this.db
         .from('donations')
-        .insert(insertData)
-        .select(`
-          *,
-          food_type:food_types(*)
-        `)
+        .insert(dbDonation)
+        .select()
         .single();
 
-      if (error) {
-        console.error('Database error:', error);
-        throw error;
-      }
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create donation');
 
-      if (!data) {
-        throw new Error('Failed to create donation');
-      }
-
-      const dbDonation = data as DbDonation;
-      // Transform the response to match the API format
-      return {
-        id: dbDonation.id,
-        foodTypeId: dbDonation.food_type_id || '',
-        quantity: dbDonation.quantity,
-        unit: dbDonation.unit,
-        pickupWindowStart: new Date(dbDonation.pickup_window_start),
-        pickupWindowEnd: new Date(dbDonation.pickup_window_end),
-        donorId: dbDonation.donor_id || '',
-        createdAt: new Date(dbDonation.created_at),
-        updatedAt: new Date(dbDonation.updated_at),
-        requiresRefrigeration: dbDonation.requires_refrigeration,
-        requiresFreezing: dbDonation.requires_freezing,
-        isFragile: dbDonation.is_fragile,
-        requiresHeavyLifting: dbDonation.requires_heavy_lifting,
-        notes: dbDonation.notes || undefined
-      };
+      // Convert database response to API format
+      return this.mapDbDonationToApi(data);
     } catch (error) {
       console.error('Error in createDonation:', error);
-      if (error instanceof DonationValidationError) {
-        throw error;
-      }
-      if (error instanceof PostgrestError) {
-        throw new Error('Database error: ' + error.message);
-      }
-      throw new Error('Failed to create donation: ' + (error as Error).message);
+      throw error;
     }
   }
 
-  async getDonation(id: string): Promise<Donation> {
+  async getDonation(id: string): Promise<ApiDonation> {
     try {
       const { data, error } = await this.db
         .from('donations')
-        .select(`
-          *,
-          food_type:food_types(*)
-        `)
+        .select()
         .eq('id', id)
         .single();
 
       if (error) throw error;
       if (!data) throw new DonationNotFoundError(id);
 
-      const dbDonation = data as DbDonation;
-
-      // Validate required fields
-      if (!dbDonation.food_type_id) {
-        throw new Error('Donation is missing required food_type_id');
-      }
-      if (!dbDonation.donor_id) {
-        throw new Error('Donation is missing required donor_id');
-      }
-
-      // Transform the response to match the API format
-      return {
-        id: dbDonation.id,
-        foodTypeId: dbDonation.food_type_id,
-        quantity: dbDonation.quantity,
-        unit: dbDonation.unit,
-        pickupWindowStart: new Date(dbDonation.pickup_window_start),
-        pickupWindowEnd: new Date(dbDonation.pickup_window_end),
-        donorId: dbDonation.donor_id,
-        createdAt: new Date(dbDonation.created_at),
-        updatedAt: new Date(dbDonation.updated_at),
-        requiresRefrigeration: dbDonation.requires_refrigeration,
-        requiresFreezing: dbDonation.requires_freezing,
-        isFragile: dbDonation.is_fragile,
-        requiresHeavyLifting: dbDonation.requires_heavy_lifting,
-        notes: dbDonation.notes || undefined
-      };
+      return data as ApiDonation;
     } catch (error) {
       console.error('Error in getDonation:', error);
       throw error;
     }
   }
 
-  async updateDonation(id: string, update: DonationUpdate): Promise<Donation> {
+  async updateDonation(id: string, update: DbDonationUpdate): Promise<ApiDonation> {
     try {
       // Check if donation exists
       await this.getDonation(id);
 
       // Validate pickup window if both times are provided
-      if (update.pickupWindowStart && update.pickupWindowEnd) {
-        if (new Date(update.pickupWindowStart) >= new Date(update.pickupWindowEnd)) {
+      if (update.pickup_window_start && update.pickup_window_end) {
+        if (new Date(update.pickup_window_start) >= new Date(update.pickup_window_end)) {
           throw new DonationValidationError('Pickup window end time must be after start time');
         }
       }
 
-      // Transform to snake_case for database
-      const dbUpdate = toSnakeCase(update);
+      const updateData = {
+        ...update,
+        updated_at: new Date().toISOString()
+      } satisfies DbDonationUpdate;
 
       const { data, error } = await this.db
         .from('donations')
-        .update(dbUpdate)
+        .update(updateData)
         .eq('id', id)
-        .select(`
-          *,
-          food_type:food_types(*)
-        `)
+        .select()
         .single();
 
       if (error) throw error;
       if (!data) throw new DonationNotFoundError(id);
 
-      const row = data as DbDonation;
-      // Transform the response to match the API format
-      return {
-        id: row.id,
-        foodTypeId: row.food_type_id,
-        quantity: row.quantity,
-        unit: row.unit,
-        pickupWindowStart: new Date(row.pickup_window_start),
-        pickupWindowEnd: new Date(row.pickup_window_end),
-        donorId: row.donor_id,
-        createdAt: new Date(row.created_at),
-        updatedAt: new Date(row.updated_at),
-        requiresRefrigeration: row.requires_refrigeration,
-        requiresFreezing: row.requires_freezing,
-        isFragile: row.is_fragile,
-        requiresHeavyLifting: row.requires_heavy_lifting,
-        notes: row.notes
-      };
+      return data as ApiDonation;
     } catch (error) {
       console.error('Error in updateDonation:', error);
-      if (error instanceof DonationNotFoundError || 
-          error instanceof DonationValidationError) {
-        throw error;
-      }
-      if (error instanceof PostgrestError) {
-        throw new Error('Database error: ' + error.message);
-      }
-      throw new Error('Failed to update donation: ' + (error as Error).message);
+      throw error;
     }
+  }
+
+  private mapDbDonationToApi(dbDonation: DbDonation): ApiDonation {
+    return {
+      id: dbDonation.id,
+      donorId: dbDonation.donor_id || '',
+      foodTypeId: dbDonation.food_type_id || '',
+      quantity: dbDonation.quantity,
+      unit: dbDonation.unit,
+      expirationDate: dbDonation.expiration_date ? new Date(dbDonation.expiration_date) : null,
+      storageRequirements: dbDonation.storage_requirements,
+      requiresRefrigeration: dbDonation.requires_refrigeration,
+      requiresFreezing: dbDonation.requires_freezing,
+      isFragile: dbDonation.is_fragile,
+      requiresHeavyLifting: dbDonation.requires_heavy_lifting,
+      pickupWindowStart: new Date(dbDonation.pickup_window_start),
+      pickupWindowEnd: new Date(dbDonation.pickup_window_end),
+      notes: dbDonation.notes,
+      donatedAt: new Date(dbDonation.donated_at),
+      createdAt: new Date(dbDonation.created_at),
+      updatedAt: new Date(dbDonation.updated_at)
+    };
   }
 
   async deleteDonation(id: string): Promise<void> {
@@ -331,7 +334,7 @@ export class DonationsApiImpl extends BaseApiImpl {
     };
   }
 
-  async createDonationWithTicket(donation: DonationCreate): Promise<{ donation: Donation; ticket: Ticket }> {
+  async createDonationWithTicket(donation: ApiDonationCreate): Promise<{ donation: ApiDonation; ticket: Ticket }> {
     try {
       // Create the donation using existing logic
       const createdDonation = await this.createDonation(donation);
@@ -349,6 +352,227 @@ export class DonationsApiImpl extends BaseApiImpl {
         throw new Error('Database error: ' + error.message);
       }
       throw new Error('Failed to create donation with ticket: ' + (error as Error).message);
+    }
+  }
+
+  async listAvailablePickups(volunteerId: string): Promise<AvailablePickup[]> {
+    try {
+      type DonationWithDonor = {
+        id: string;
+        food_type_id: string | null;
+        quantity: number;
+        unit: string;
+        pickup_window_start: string;
+        pickup_window_end: string;
+        requires_refrigeration: boolean;
+        requires_freezing: boolean;
+        requires_heavy_lifting: boolean;
+        urgency: string;
+        donors: { organization_name: string; location_id: string | null };
+      };
+
+      const { data, error } = await this.db
+        .from('donations')
+        .select(`
+          id,
+          food_type_id,
+          quantity,
+          unit,
+          pickup_window_start,
+          pickup_window_end,
+          requires_refrigeration,
+          requires_freezing,
+          requires_heavy_lifting,
+          urgency,
+          donors:donor_id!inner (
+            organization_name,
+            location_id
+          )
+        `)
+        .eq('status', 'submitted')
+        .is('volunteer_id', null)
+        .returns<DonationWithDonor[]>();
+
+      if (error) throw error;
+      if (!data) return [];
+
+      // TODO: Calculate distances using volunteer's location
+      return data.map(d => ({
+        id: d.id,
+        donorName: d.donors.organization_name,
+        pickupLocation: 'TODO: Get from location_id',
+        deliveryLocation: 'TODO: Get from location_id',
+        pickupWindow: {
+          start: d.pickup_window_start,
+          end: d.pickup_window_end
+        },
+        foodType: d.food_type_id ?? '',
+        quantity: `${d.quantity} ${d.unit}`,
+        distance: Math.random() * 10, // Mock distance
+        urgency: d.urgency as 'low' | 'medium' | 'high' ?? 'low',
+        requirements: {
+          refrigeration: d.requires_refrigeration,
+          freezing: d.requires_freezing,
+          heavyLifting: d.requires_heavy_lifting
+        }
+      }));
+    } catch (error) {
+      console.error('Error in listAvailablePickups:', error);
+      throw error;
+    }
+  }
+
+  async claimPickup(pickupId: string, volunteerId: string): Promise<void> {
+    try {
+      const update = {
+        volunteer_id: volunteerId,
+        status: 'scheduled',
+        updated_at: new Date().toISOString()
+      } satisfies DbDonationUpdate;
+
+      const { error } = await this.db
+        .from('donations')
+        .update(update)
+        .eq('id', pickupId)
+        .eq('status', 'submitted')
+        .is('volunteer_id', null);
+
+      if (error) {
+        if (error.code === '23505') { // Unique constraint violation
+          throw new DonationConflictError('This pickup has already been claimed');
+        }
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in claimPickup:', error);
+      throw error;
+    }
+  }
+
+  async updatePickupStatus(
+    pickupId: string,
+    volunteerId: string,
+    status: 'in_transit' | 'delivered'
+  ): Promise<void> {
+    try {
+      const update = {
+        status: status as string,
+        updated_at: new Date().toISOString(),
+        ...(status === 'delivered' ? { completed_at: new Date().toISOString() } : {})
+      } satisfies DbDonationUpdate;
+
+      const { error } = await this.db
+        .from('donations')
+        .update(update)
+        .eq('id', pickupId)
+        .eq('volunteer_id', volunteerId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error in updatePickupStatus:', error);
+      throw error;
+    }
+  }
+
+  async listActiveDeliveries(volunteerId: string): Promise<ActiveDelivery[]> {
+    try {
+      type DonationWithDonor = {
+        id: string;
+        status: string;
+        food_type_id: string | null;
+        quantity: number;
+        unit: string;
+        pickup_window_start: string;
+        pickup_window_end: string;
+        donors: { organization_name: string; location_id: string | null };
+      };
+
+      const { data, error } = await this.db
+        .from('donations')
+        .select(`
+          id,
+          status,
+          food_type_id,
+          quantity,
+          unit,
+          pickup_window_start,
+          pickup_window_end,
+          donors:donor_id!inner (
+            organization_name,
+            location_id
+          )
+        `)
+        .eq('volunteer_id', volunteerId)
+        .in('status', ['scheduled', 'in_transit'])
+        .returns<DonationWithDonor[]>();
+
+      if (error) throw error;
+      if (!data) return [];
+
+      return data.map(d => ({
+        id: d.id,
+        status: d.status as 'scheduled' | 'in_transit' | 'delivered',
+        pickupLocation: 'TODO: Get from location_id',
+        deliveryLocation: 'TODO: Get from location_id',
+        pickupTime: d.pickup_window_start,
+        foodType: d.food_type_id ?? '',
+        quantity: `${d.quantity} ${d.unit}`
+      }));
+    } catch (error) {
+      console.error('Error in listActiveDeliveries:', error);
+      throw error;
+    }
+  }
+
+  async getDeliveryHistory(volunteerId: string): Promise<DeliveryRecord[]> {
+    try {
+      type DonationWithDonor = {
+        id: string;
+        completed_at: string | null;
+        food_type_id: string | null;
+        quantity: number;
+        unit: string;
+        impact_metrics: { meals_provided: number; carbon_saved: number } | null;
+        donors: { organization_name: string; location_id: string | null };
+      };
+
+      const { data, error } = await this.db
+        .from('donations')
+        .select(`
+          id,
+          completed_at,
+          food_type_id,
+          quantity,
+          unit,
+          impact_metrics,
+          donors:donor_id!inner (
+            organization_name,
+            location_id
+          )
+        `)
+        .eq('volunteer_id', volunteerId)
+        .eq('status', 'completed')
+        .order('completed_at', { ascending: false })
+        .returns<DonationWithDonor[]>();
+
+      if (error) throw error;
+      if (!data) return [];
+
+      return data.map(d => ({
+        id: d.id,
+        date: d.completed_at ?? new Date().toISOString(),
+        pickupLocation: 'TODO: Get from location_id',
+        deliveryLocation: 'TODO: Get from location_id',
+        foodType: d.food_type_id ?? '',
+        quantity: `${d.quantity} ${d.unit}`,
+        impact: {
+          mealsProvided: d.impact_metrics?.meals_provided ?? 0,
+          carbonSaved: d.impact_metrics?.carbon_saved ?? 0
+        }
+      }));
+    } catch (error) {
+      console.error('Error in getDeliveryHistory:', error);
+      throw error;
     }
   }
 } 

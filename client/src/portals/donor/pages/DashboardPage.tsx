@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../../core/api';
 import { BaseButton } from '../../../shared/components/base/BaseButton';
+import type { Donation } from '@lib/api/generated/src/models';
 
 interface DashboardMetric {
   label: string;
@@ -27,12 +28,25 @@ interface DashboardMetric {
 
 interface RecentDonation {
   id: string;
-  foodType: string;
+  foodType: {
+    id: string;
+    name: string;
+  };
   quantity: number;
   unit: string;
-  status: string;
+  status?: string;
   pickupWindowStart: string;
+  pickupWindowEnd: string;
   createdAt: string;
+}
+
+interface GetDonationsResponse {
+  data: {
+    donations: {
+      total: number;
+      donations: RecentDonation[];
+    };
+  };
 }
 
 const getStatusIcon = (status: string | undefined) => {
@@ -73,19 +87,19 @@ export function DashboardPage() {
     queryKey: ['donorDashboard'],
     queryFn: async () => {
       try {
-        const response = await api.donations.getDonations({
+        const { data } = await api.donations.getDonations({
           limit: 0,  // We only need the total count
-          includeMetrics: true,
         });
         
         // Calculate metrics from the response
-        const total = response.data.donations.total || 0;
-        const thisMonth = response.data.donations.donations?.filter(d => {
-          const date = new Date(d.createdAt);
+        const donations = data.donations.donations || [];
+        const total = donations.length;
+        const thisMonth = donations.filter((d: Donation) => {
+          const date = new Date(d.createdAt || '');
           const now = new Date();
           return date.getMonth() === now.getMonth() && 
                  date.getFullYear() === now.getFullYear();
-        }).length || 0;
+        }).length;
         
         return {
           metrics: {
@@ -103,16 +117,24 @@ export function DashboardPage() {
   });
 
   // Fetch recent donations
-  const { data: recentDonationsResponse, isLoading: isRecentLoading } = useQuery({
-    queryKey: ['recentDonations'],
+  const { data: recentDonations, isLoading: isRecentLoading } = useQuery({
+    queryKey: ['donations'],
     queryFn: async () => {
-      const response = await api.donations.getDonations({ limit: 5 });
-      return response.data;
-    },
+      const { data } = await api.donations.getDonations({ limit: 5 });
+      return (data.donations.donations || []).map((d: Donation) => ({
+        id: d.id,
+        foodType: {
+          id: d.foodTypeId,
+          name: 'Unknown Food Type' // TODO: Get food type name from API
+        },
+        quantity: d.quantity,
+        unit: d.unit,
+        pickupWindowStart: d.pickupWindowStart,
+        pickupWindowEnd: d.pickupWindowEnd,
+        createdAt: d.createdAt || new Date().toISOString()
+      }));
+    }
   });
-
-  // Safely extract donations array
-  const recentDonations = recentDonationsResponse?.donations?.donations || [];
 
   const metrics: DashboardMetric[] = [
     {
@@ -250,7 +272,7 @@ export function DashboardPage() {
                       />
                       <div>
                         <p className="font-medium">
-                          {donation.quantity} {donation.unit} of {donation.foodType}
+                          {donation.quantity} {donation.unit} of {donation.foodType?.name || 'Unknown Food Type'}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           Created on {formatDate(donation.createdAt)}
