@@ -50,6 +50,55 @@ interface GetDonationsParams {
   search?: string;
 }
 
+// Types
+export interface Ticket {
+  id: string;
+  donorName: string;
+  pickupLocation: string;
+  deliveryLocation: string;
+  pickupWindow: {
+    start: string;
+    end: string;
+  };
+  foodType: string;
+  quantity: string;
+  distance: number;
+  urgency: 'low' | 'medium' | 'high';
+  requirements: {
+    refrigeration: boolean;
+    freezing: boolean;
+    heavyLifting: boolean;
+  };
+  status: 'submitted' | 'scheduled' | 'in_transit' | 'delivered' | 'completed';
+}
+
+export interface ActiveDelivery {
+  id: string;
+  status: 'scheduled' | 'in_transit' | 'delivered';
+  pickupLocation: string;
+  deliveryLocation: string;
+  pickupTime: string;
+  foodType: string;
+  quantity: string;
+}
+
+export interface DeliveryRecord {
+  id: string;
+  date: string;
+  pickupLocation: string;
+  deliveryLocation: string;
+  foodType: string;
+  quantity: string;
+  impact: {
+    mealsProvided: number;
+    carbonSaved: number;
+  };
+  rating?: {
+    score: number;
+    feedback?: string;
+  };
+}
+
 export const api = {
   auth: {
     login: (email: string, password: string) => 
@@ -80,6 +129,38 @@ export const api = {
   foodTypes: {
     list: () => axiosInstance.get('/food-types'),
   },
+  volunteer: {
+    // List available tickets
+    async listAvailableTickets(): Promise<Ticket[]> {
+      const { data } = await axiosInstance.get('/volunteer/tickets/available');
+      return data.tickets;
+    },
+
+    // Claim a ticket
+    async claimTicket(ticketId: string): Promise<void> {
+      await axiosInstance.post(`/volunteer/tickets/${ticketId}/claim`);
+    },
+
+    // Update ticket status
+    async updateTicketStatus(
+      ticketId: string,
+      status: 'in_transit' | 'delivered'
+    ): Promise<void> {
+      await axiosInstance.post(`/volunteer/tickets/${ticketId}/status`, { status });
+    },
+
+    // List active tickets
+    async listActiveTickets(): Promise<Ticket[]> {
+      const { data } = await axiosInstance.get('/volunteer/tickets/active');
+      return data.tickets;
+    },
+
+    // Get ticket history
+    async getTicketHistory(): Promise<Ticket[]> {
+      const { data } = await axiosInstance.get('/volunteer/tickets/history');
+      return data.history;
+    }
+  }
 } as const;
 
 export type Api = typeof api; 

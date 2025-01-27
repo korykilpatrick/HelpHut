@@ -136,6 +136,82 @@ Located in `client/src/shared/components/base/`, these foundational UI component
    - Business logic interfaces
    - Service layer types
 
+## Ticket System
+The ticket system is the core of HelpHut's food rescue operations. A ticket represents the complete lifecycle of a food rescue operation, connecting all participants and tracking the entire process.
+
+### Ticket Structure
+```typescript
+interface Ticket {
+  id: string;
+  donationId: string;          // Reference to the food donation
+  status: TicketStatus;        // Current state of the rescue
+  priority: TicketPriority;    // Urgency level
+  volunteerId?: string;        // Assigned volunteer (if claimed)
+  partnerOrgId?: string;      // Destination partner organization
+  pickupLocationId: string;    // Where to pick up the food
+  dropoffLocationId: string;   // Where to deliver the food
+  createdAt: string;          // When the ticket was created
+  updatedAt: string;          // Last status update
+  completedAt?: string;       // When the delivery was completed
+}
+
+type TicketStatus = 
+  | 'submitted'    // Initial state when donation is created
+  | 'scheduled'    // Claimed by volunteer
+  | 'in_transit'   // Pickup completed, en route to delivery
+  | 'delivered'    // Dropped off at partner
+  | 'completed'    // Confirmed by partner
+```
+
+### Ticket Lifecycle
+1. **Creation**: Automatically created when a donor submits a donation
+2. **Assignment**: Volunteer claims the ticket
+3. **Execution**: Volunteer updates status during pickup and delivery
+4. **Completion**: Partner confirms receipt
+5. **Impact**: System calculates and records impact metrics
+
+### Key Ticket Operations
+```typescript
+interface TicketOperations {
+  // Volunteer operations
+  listAvailableTickets(): Promise<Ticket[]>    // Show unclaimed tickets
+  claimTicket(id: string): Promise<void>       // Volunteer claims ticket
+  updateTicketStatus(                          // Update rescue progress
+    id: string, 
+    status: TicketStatus
+  ): Promise<void>
+  listActiveTickets(): Promise<Ticket[]>       // Show in-progress tickets
+  getTicketHistory(): Promise<Ticket[]>        // Show completed tickets
+
+  // Partner operations
+  listIncomingTickets(): Promise<Ticket[]>     // Expected deliveries
+  confirmTicket(id: string): Promise<void>     // Confirm receipt
+
+  // Admin operations
+  reassignTicket(                              // Change volunteer
+    id: string, 
+    volunteerId: string
+  ): Promise<void>
+  cancelTicket(id: string): Promise<void>      // Cancel rescue operation
+}
+```
+
+### Business Rules
+1. **Claiming**
+   - Only unclaimed tickets can be claimed
+   - Once claimed, locked to volunteer
+   - Auto-release if not picked up in time
+
+2. **Status Updates**
+   - Must follow defined progression
+   - Only assigned volunteer can update
+   - Timestamps recorded for each change
+
+3. **Completion**
+   - Requires partner confirmation
+   - Triggers impact calculation
+   - Updates volunteer metrics
+
 ## Route Development Process
 
 ### 1. Type Preparation

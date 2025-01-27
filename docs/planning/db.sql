@@ -281,7 +281,8 @@ CREATE TABLE tickets (
   pickup_location_id UUID REFERENCES locations(id) ON UPDATE CASCADE ON DELETE SET NULL,
   dropoff_location_id UUID REFERENCES locations(id) ON UPDATE CASCADE ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at TIMESTAMPTZ
 );
 
 --------------------------------------------------------------------------------

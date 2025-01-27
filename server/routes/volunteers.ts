@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequest } from '../middleware/validate';
 import { api } from '../../lib/api/impl';
-import type { VolunteerCreate, VolunteerUpdate } from '../../lib/api/generated/api';
 
 const router = Router();
 
@@ -14,7 +13,7 @@ const volunteerCreateSchema = z.object({
   phone: z.string(),
   vehicleType: z.string().optional(),
   locationId: z.string().uuid().optional()
-}) satisfies z.ZodType<VolunteerCreate>;
+});
 
 const volunteerUpdateSchema = z.object({
   userId: z.string().uuid().optional(),
@@ -23,7 +22,11 @@ const volunteerUpdateSchema = z.object({
   phone: z.string().optional(),
   vehicleType: z.string().optional(),
   locationId: z.string().uuid().optional()
-}) satisfies z.ZodType<VolunteerUpdate>;
+});
+
+const statusUpdateSchema = z.object({
+  status: z.enum(['in_transit', 'delivered'])
+});
 
 // GET /volunteers - List volunteers
 router.get('/', async (req, res, next) => {
@@ -74,6 +77,70 @@ router.delete('/:id', async (req, res, next) => {
   try {
     await api.volunteers.deleteVolunteer(req.params.id);
     res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Pickup and Delivery Routes
+
+// GET /volunteers/:id/pickups/available - List available pickups
+router.get('/:id/pickups/available', async (req, res, next) => {
+  try {
+    const volunteerId = req.params.id;
+    const pickups = await api.donations.listAvailablePickups(volunteerId);
+    res.json({ pickups });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /volunteers/:id/pickups/:pickupId/claim - Claim a pickup
+router.post('/:id/pickups/:pickupId/claim', async (req, res, next) => {
+  try {
+    const volunteerId = req.params.id;
+    const pickupId = req.params.pickupId;
+    await api.donations.claimPickup(pickupId, volunteerId);
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /volunteers/:id/pickups/:pickupId/status - Update pickup status
+router.post(
+  '/:id/pickups/:pickupId/status',
+  validateRequest({ body: statusUpdateSchema }),
+  async (req, res, next) => {
+    try {
+      const volunteerId = req.params.id;
+      const pickupId = req.params.pickupId;
+      const { status } = req.body;
+      await api.donations.updatePickupStatus(pickupId, volunteerId, status);
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// GET /volunteers/:id/deliveries/active - List active deliveries
+router.get('/:id/deliveries/active', async (req, res, next) => {
+  try {
+    const volunteerId = req.params.id;
+    const deliveries = await api.donations.listActiveDeliveries(volunteerId);
+    res.json({ deliveries });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /volunteers/:id/deliveries/history - Get delivery history
+router.get('/:id/deliveries/history', async (req, res, next) => {
+  try {
+    const volunteerId = req.params.id;
+    const history = await api.donations.getDeliveryHistory(volunteerId);
+    res.json({ history });
   } catch (error) {
     next(error);
   }

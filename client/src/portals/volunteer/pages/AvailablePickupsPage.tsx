@@ -16,26 +16,7 @@ import BaseBadge from '../../../shared/components/base/BaseBadge';
 import { Input } from '../../../shared/components/inputs/Input';
 import { Select } from '../../../shared/components/inputs/Select';
 import { toast } from '../../../shared/components/toast';
-
-interface AvailablePickup {
-  id: string;
-  donorName: string;
-  pickupLocation: string;
-  deliveryLocation: string;
-  pickupWindow: {
-    start: string;
-    end: string;
-  };
-  foodType: string;
-  quantity: string;
-  distance: number;
-  urgency: 'low' | 'medium' | 'high';
-  requirements: {
-    refrigeration: boolean;
-    freezing: boolean;
-    heavyLifting: boolean;
-  };
-}
+import type { AvailablePickup } from '../../../core/api';
 
 const urgencyColors = {
   low: 'default',
@@ -58,63 +39,12 @@ export function AvailablePickupsPage() {
   // Fetch available pickups
   const { data: pickups, isLoading } = useQuery({
     queryKey: ['availablePickups', { urgencyFilter, distanceSort }],
-    queryFn: async () => {
-      try {
-        // TODO: Replace with actual API call
-        return [
-          {
-            id: '1',
-            donorName: 'Central Market Downtown',
-            pickupLocation: '4001 N Lamar Blvd, Austin, TX',
-            deliveryLocation: 'Austin Food Bank',
-            pickupWindow: {
-              start: '2024-01-25T14:30:00Z',
-              end: '2024-01-25T15:30:00Z'
-            },
-            foodType: 'Produce',
-            quantity: '50 lbs',
-            distance: 2.4,
-            urgency: 'high',
-            requirements: {
-              refrigeration: true,
-              freezing: false,
-              heavyLifting: false
-            }
-          },
-          {
-            id: '2',
-            donorName: 'Whole Foods Market',
-            pickupLocation: '525 N Lamar Blvd, Austin, TX',
-            deliveryLocation: 'Salvation Army',
-            pickupWindow: {
-              start: '2024-01-25T16:00:00Z',
-              end: '2024-01-25T17:00:00Z'
-            },
-            foodType: 'Prepared Meals',
-            quantity: '25 meals',
-            distance: 3.1,
-            urgency: 'medium',
-            requirements: {
-              refrigeration: true,
-              freezing: false,
-              heavyLifting: false
-            }
-          }
-        ] as AvailablePickup[];
-      } catch (error) {
-        console.error('Error fetching available pickups:', error);
-        throw error;
-      }
-    }
+    queryFn: () => api.volunteer.listAvailablePickups()
   });
 
   // Claim pickup mutation
   const claimMutation = useMutation({
-    mutationFn: async (pickupId: string) => {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return { success: true };
-    },
+    mutationFn: (pickupId: string) => api.volunteer.claimPickup(pickupId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['availablePickups'] });
       toast.success('Pickup claimed successfully!');

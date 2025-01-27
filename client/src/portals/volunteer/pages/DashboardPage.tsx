@@ -15,6 +15,7 @@ import BaseCard from '../../../shared/components/base/BaseCard';
 import { BaseButton } from '../../../shared/components/base/BaseButton';
 import BaseText from '../../../shared/components/base/BaseText';
 import BaseBadge from '../../../shared/components/base/BaseBadge';
+import type { ActiveDelivery } from '../../../core/api';
 
 interface DashboardMetric {
   label: string;
@@ -27,21 +28,11 @@ interface DashboardMetric {
   };
 }
 
-interface ActiveDelivery {
-  id: string;
-  status: 'pending' | 'in_progress' | 'completed';
-  pickupLocation: string;
-  deliveryLocation: string;
-  pickupTime: string;
-  foodType: string;
-  quantity: string;
-}
-
 const getStatusIcon = (status: string) => {
   switch (status) {
     case 'completed':
       return CheckCircle2;
-    case 'in_progress':
+    case 'in_transit':
       return Truck;
     default:
       return Clock;
@@ -52,7 +43,7 @@ const getStatusColor = (status: string) => {
   switch (status) {
     case 'completed':
       return 'success';
-    case 'in_progress':
+    case 'in_transit':
       return 'primary';
     default:
       return 'warning';
@@ -62,70 +53,43 @@ const getStatusColor = (status: string) => {
 export function DashboardPage() {
   const navigate = useNavigate();
 
-  // Fetch dashboard data
-  const { data: dashboardData, isLoading: isDashboardLoading } = useQuery({
-    queryKey: ['volunteerDashboard'],
-    queryFn: async () => {
-      try {
-        // TODO: Replace with actual API call
-        return {
-          metrics: {
-            totalDeliveries: 48,
-            hoursVolunteered: 36,
-            impactScore: 144,
-            coverageAreas: 3
-          },
-          activeDeliveries: [
-            {
-              id: '1',
-              status: 'in_progress',
-              pickupLocation: 'Central Market Downtown',
-              deliveryLocation: 'Austin Food Bank',
-              pickupTime: '2024-01-25T14:30:00Z',
-              foodType: 'Produce',
-              quantity: '50 lbs'
-            },
-            {
-              id: '2',
-              status: 'pending',
-              pickupLocation: 'Whole Foods Market',
-              deliveryLocation: 'Salvation Army',
-              pickupTime: '2024-01-25T16:00:00Z',
-              foodType: 'Prepared Meals',
-              quantity: '25 meals'
-            }
-          ]
-        };
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        throw error;
-      }
-    },
+  // Fetch active deliveries
+  const { data: activeDeliveries, isLoading: isDeliveriesLoading } = useQuery({
+    queryKey: ['activeDeliveries'],
+    queryFn: () => api.volunteer.listActiveDeliveries()
   });
 
+  // Fetch delivery history for metrics
+  const { data: deliveryHistory, isLoading: isHistoryLoading } = useQuery({
+    queryKey: ['deliveryHistory'],
+    queryFn: () => api.volunteer.getDeliveryHistory()
+  });
+
+  // Calculate metrics
   const metrics: DashboardMetric[] = [
     {
       label: 'Total Deliveries',
-      value: dashboardData?.metrics.totalDeliveries || 0,
+      value: deliveryHistory?.length || 0,
       description: 'Completed food rescues',
       icon: Truck
     },
     {
       label: 'Hours Volunteered',
-      value: dashboardData?.metrics.hoursVolunteered || 0,
+      value: Math.round((deliveryHistory?.length || 0) * 1.5), // Estimate 1.5 hours per delivery
       description: 'Total time contributed',
       icon: Clock
     },
     {
       label: 'Impact Score',
-      value: dashboardData?.metrics.impactScore || 0,
+      value: deliveryHistory?.reduce((total, delivery) => 
+        total + (delivery.impact?.mealsProvided || 0), 0) || 0,
       description: 'People helped through your work',
       icon: BarChart3
     },
     {
-      label: 'Coverage Areas',
-      value: dashboardData?.metrics.coverageAreas || 0,
-      description: 'Active delivery zones',
+      label: 'Active Deliveries',
+      value: activeDeliveries?.length || 0,
+      description: 'Current assignments',
       icon: MapPin
     }
   ];
@@ -140,6 +104,8 @@ export function DashboardPage() {
       hour12: true
     });
   };
+
+  const isLoading = isDeliveriesLoading || isHistoryLoading;
 
   return (
     <div className="container mx-auto py-8">
@@ -222,7 +188,7 @@ export function DashboardPage() {
         }
       >
         <div className="divide-y">
-          {dashboardData?.activeDeliveries.map((delivery) => {
+          {activeDeliveries?.map((delivery) => {
             const StatusIcon = getStatusIcon(delivery.status);
             return (
               <div
@@ -235,7 +201,7 @@ export function DashboardPage() {
                       variant={getStatusColor(delivery.status)}
                       icon={<StatusIcon className="h-3.5 w-3.5" />}
                     >
-                      {delivery.status === 'in_progress' ? 'In Progress' : 'Pending'}
+                      {delivery.status === 'in_transit' ? 'In Progress' : 'Pending'}
                     </BaseBadge>
                     <BaseText size="sm" weight="medium" truncate>
                       {delivery.pickupLocation} → {delivery.deliveryLocation}
@@ -260,7 +226,7 @@ export function DashboardPage() {
               </div>
             );
           })}
-          {(!dashboardData?.activeDeliveries || dashboardData.activeDeliveries.length === 0) && (
+          {(!activeDeliveries || activeDeliveries.length === 0) && (
             <div className="flex items-center justify-center py-8">
               <div className="text-center">
                 <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground/50" />
