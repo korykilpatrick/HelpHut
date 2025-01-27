@@ -15,12 +15,16 @@
 
 import * as runtime from '../runtime';
 import type {
+  Donation,
   ErrorResponse,
   Partner,
   PartnerCreate,
   PartnerUpdate,
+  Ticket,
 } from '../models/index';
 import {
+    DonationFromJSON,
+    DonationToJSON,
     ErrorResponseFromJSON,
     ErrorResponseToJSON,
     PartnerFromJSON,
@@ -29,7 +33,13 @@ import {
     PartnerCreateToJSON,
     PartnerUpdateFromJSON,
     PartnerUpdateToJSON,
+    TicketFromJSON,
+    TicketToJSON,
 } from '../models/index';
+
+export interface ClaimDonationRequest {
+    id: string;
+}
 
 export interface CreatePartnerRequest {
     partnerCreate: PartnerCreate;
@@ -41,6 +51,16 @@ export interface DeletePartnerRequest {
 
 export interface GetPartnerRequest {
     id: string;
+}
+
+export interface ListAvailableDonationsRequest {
+    limit?: number;
+    offset?: number;
+}
+
+export interface ListClaimedDonationsRequest {
+    limit?: number;
+    offset?: number;
 }
 
 export interface ListPartnersRequest {
@@ -60,6 +80,21 @@ export interface UpdatePartnerRequest {
  * @interface PartnersApiInterface
  */
 export interface PartnersApiInterface {
+    /**
+     * 
+     * @summary Claim a donation for the authenticated partner
+     * @param {string} id UUID of the resource
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PartnersApiInterface
+     */
+    claimDonationRaw(requestParameters: ClaimDonationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Ticket>>;
+
+    /**
+     * Claim a donation for the authenticated partner
+     */
+    claimDonation(requestParameters: ClaimDonationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Ticket>;
+
     /**
      * 
      * @summary Create a new partner
@@ -107,6 +142,38 @@ export interface PartnersApiInterface {
 
     /**
      * 
+     * @summary List available donations for partners to claim
+     * @param {number} [limit] Maximum number of items to return
+     * @param {number} [offset] Number of items to skip before starting to collect results
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PartnersApiInterface
+     */
+    listAvailableDonationsRaw(requestParameters: ListAvailableDonationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Donation>>>;
+
+    /**
+     * List available donations for partners to claim
+     */
+    listAvailableDonations(requestParameters: ListAvailableDonationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Donation>>;
+
+    /**
+     * 
+     * @summary List donations claimed by the authenticated partner
+     * @param {number} [limit] Maximum number of items to return
+     * @param {number} [offset] Number of items to skip before starting to collect results
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PartnersApiInterface
+     */
+    listClaimedDonationsRaw(requestParameters: ListClaimedDonationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Donation>>>;
+
+    /**
+     * List donations claimed by the authenticated partner
+     */
+    listClaimedDonations(requestParameters: ListClaimedDonationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Donation>>;
+
+    /**
+     * 
      * @summary List partners
      * @param {number} [limit] Maximum number of items to return
      * @param {number} [offset] Number of items to skip before starting to collect results
@@ -143,6 +210,47 @@ export interface PartnersApiInterface {
  * 
  */
 export class PartnersApi extends runtime.BaseAPI implements PartnersApiInterface {
+
+    /**
+     * Claim a donation for the authenticated partner
+     */
+    async claimDonationRaw(requestParameters: ClaimDonationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Ticket>> {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling claimDonation().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("BearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/partners/donations/{id}/claim`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id']))),
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => TicketFromJSON(jsonValue));
+    }
+
+    /**
+     * Claim a donation for the authenticated partner
+     */
+    async claimDonation(requestParameters: ClaimDonationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Ticket> {
+        const response = await this.claimDonationRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Create a new partner
@@ -266,6 +374,90 @@ export class PartnersApi extends runtime.BaseAPI implements PartnersApiInterface
      */
     async getPartner(requestParameters: GetPartnerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Partner> {
         const response = await this.getPartnerRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * List available donations for partners to claim
+     */
+    async listAvailableDonationsRaw(requestParameters: ListAvailableDonationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Donation>>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['limit'] != null) {
+            queryParameters['limit'] = requestParameters['limit'];
+        }
+
+        if (requestParameters['offset'] != null) {
+            queryParameters['offset'] = requestParameters['offset'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("BearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/partners/donations/available`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(DonationFromJSON));
+    }
+
+    /**
+     * List available donations for partners to claim
+     */
+    async listAvailableDonations(requestParameters: ListAvailableDonationsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Donation>> {
+        const response = await this.listAvailableDonationsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * List donations claimed by the authenticated partner
+     */
+    async listClaimedDonationsRaw(requestParameters: ListClaimedDonationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Donation>>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['limit'] != null) {
+            queryParameters['limit'] = requestParameters['limit'];
+        }
+
+        if (requestParameters['offset'] != null) {
+            queryParameters['offset'] = requestParameters['offset'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("BearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/partners/donations/claimed`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(DonationFromJSON));
+    }
+
+    /**
+     * List donations claimed by the authenticated partner
+     */
+    async listClaimedDonations(requestParameters: ListClaimedDonationsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Donation>> {
+        const response = await this.listClaimedDonationsRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

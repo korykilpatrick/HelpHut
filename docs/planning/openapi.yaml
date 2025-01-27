@@ -2133,6 +2133,85 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /partners/donations/available:
+    get:
+      tags: [Partners]
+      summary: List available donations for partners to claim
+      operationId: listAvailableDonations
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Array of available donations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Donation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /partners/donations/claimed:
+    get:
+      tags: [Partners]
+      summary: List donations claimed by the authenticated partner
+      operationId: listClaimedDonations
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+      responses:
+        "200":
+          description: Array of claimed donations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Donation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /partners/donations/{id}/claim:
+    post:
+      tags: [Partners]
+      summary: Claim a donation for the authenticated partner
+      operationId: claimDonation
+      parameters:
+        - $ref: "#/components/parameters/PathUUID"
+      responses:
+        "200":
+          description: Successfully claimed donation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not found
+        "409":
+          description: Donation already claimed
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
 components:
   securitySchemes:
     BearerAuth:
