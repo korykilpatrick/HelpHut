@@ -41,6 +41,25 @@ type DbDonationUpdate = Database['public']['Tables']['donations']['Update'] & {
 type DbTicket = Database['public']['Tables']['tickets']['Row'];
 type DbDonor = Database['public']['Tables']['donors']['Row'];
 
+// Type for the donation details returned by the query
+interface DonationWithDetails extends DbDonation {
+  donors: {
+    organization_name: string;
+    location_id: string | null;
+  };
+  tickets: {
+    id: string;
+    status: string;
+    priority: string;
+    partner_org_id: string | null;
+    dropoff_location_id: string | null;
+    partners?: {
+      name: string;
+      location_id: string | null;
+    } | null;
+  }[];
+}
+
 // API types (camelCase)
 interface AvailablePickup {
   id: string;
@@ -388,7 +407,6 @@ export class DonationsApiImpl extends BaseApiImpl {
           requires_refrigeration,
           requires_freezing,
           requires_heavy_lifting,
-          urgency,
           donors:donor_id (
             organization_name,
             location_id
@@ -396,6 +414,7 @@ export class DonationsApiImpl extends BaseApiImpl {
           tickets (
             id,
             status,
+            priority,
             partner_org_id,
             dropoff_location_id,
             partners:partner_org_id (
@@ -437,7 +456,7 @@ export class DonationsApiImpl extends BaseApiImpl {
           foodType: d.food_type_id ?? '',
           quantity: `${d.quantity} ${d.unit}`,
           distance: Math.random() * 10,
-          urgency: d.urgency as 'low' | 'medium' | 'high' ?? 'low',
+          urgency: (ticket?.priority?.toLowerCase() as 'low' | 'medium' | 'high') ?? 'low',
           requirements: {
             refrigeration: d.requires_refrigeration,
             freezing: d.requires_freezing,
