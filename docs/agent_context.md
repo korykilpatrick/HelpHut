@@ -408,6 +408,16 @@ interface TicketOperations {
    - [ ] Store token in localStorage
    - [ ] Validate session on init
 
+5. **API Client Usage**
+   - Always use the configured `axiosInstance` from `client/src/core/api/index.ts`
+   - Never use raw fetch or standalone axios calls
+   - The instance automatically:
+     - Includes auth token from localStorage
+     - Sets correct base URL
+     - Handles case transformation
+     - Manages 401 redirects to login
+     - Provides consistent error handling
+
 ## Development Principles
 1. **OpenAPI-First Development**
    - All API changes must start with OpenAPI spec updates
@@ -643,5 +653,3 @@ export function PortalPage() {
    - Implement proper memoization
    - Use virtualization for long lists
    - Lazy load portal components
-
-// ... existing code ... 
