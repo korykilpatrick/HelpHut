@@ -445,7 +445,7 @@ export class DonationsApiImpl extends BaseApiImpl {
       return validPickups.map(d => {
         const ticket = d.tickets[0];
         return {
-          id: d.id,
+          id: ticket.id,
           donorName: d.donors.organization_name,
           pickupLocation: 'TODO: Get from donor location_id',
           deliveryLocation: ticket?.partners?.name || 'Awaiting Partner Assignment',

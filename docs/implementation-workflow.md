@@ -21,21 +21,21 @@
   - [ ] List claimed donations
 
 ### 2. Volunteer Essentials
-- [ ] Basic volunteer authentication
+✅ Basic volunteer authentication
 - [ ] Simple volunteer dashboard
-  - [ ] List of available deliveries
-  - [ ] Basic delivery signup
+  ✅ List of available pickups
+  ✅ Claim pickup functionality
   - [ ] View assigned deliveries
 - [ ] Volunteer API endpoints
-  - [ ] List available deliveries
-  - [ ] Sign up for delivery
+  ✅ List available pickups
+  ✅ Claim pickup
   - [ ] Update delivery status
 
 ### 3. Workflow Integration
 - [ ] Ticket status flow refinement
-  - [ ] Update status transitions
+  ✅ Basic status transitions
   - [ ] Handle partner claims
-  - [ ] Handle volunteer assignments
+  ✅ Handle volunteer assignments
 - [ ] Basic notification system
   - [ ] Partner notification on new donations
   - [ ] Volunteer notification on available deliveries

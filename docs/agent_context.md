@@ -361,6 +361,53 @@ interface TicketOperations {
 - [ ] Handle business logic errors
 - [ ] Export router
 
+### Authentication Implementation
+1. **Token Requirements**
+   ```typescript
+   // Frontend: Set Bearer token in axios
+   setAuthToken(token) {
+     axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+   }
+   
+   // Backend: Verify in middleware
+   const requireAuth = async (req, res, next) => {
+     const token = req.headers.authorization?.split(' ')[1];
+     if (!token) return res.status(401).json({ error: 'No token' });
+     // Verify with Supabase and attach user to req
+   };
+   ```
+
+2. **Protected Route Pattern**
+   ```typescript
+   router.get('/protected', requireAuth, async (req, res) => {
+     const user = req.user; // Added by middleware
+     // Route logic
+   });
+   ```
+
+3. **Auth Response Format**
+   ```typescript
+   // Consistent format for login/session
+   {
+     user: {
+       ...userData,
+       role: string,
+       organization?: object
+     },
+     session: {
+       token: session.access_token
+     }
+   }
+   ```
+
+4. **Implementation Checklist**
+   - [ ] Use requireAuth middleware
+   - [ ] Return consistent token format
+   - [ ] Set Bearer token in axios
+   - [ ] Handle 401s in interceptor
+   - [ ] Store token in localStorage
+   - [ ] Validate session on init
+
 ## Development Principles
 1. **OpenAPI-First Development**
    - All API changes must start with OpenAPI spec updates

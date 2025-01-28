@@ -153,7 +153,7 @@ export const api = {
 
     // Claim a ticket
     async claimPickup(pickupId: string): Promise<void> {
-      await axiosInstance.post(`/volunteer/pickups/${pickupId}/claim`);
+      await axiosInstance.post(`/volunteer/tickets/${pickupId}/claim`);
     },
 
     // Update ticket status
@@ -161,7 +161,7 @@ export const api = {
       pickupId: string,
       status: 'in_transit' | 'delivered'
     ): Promise<void> {
-      await axiosInstance.post(`/volunteer/pickups/${pickupId}/status`, { status });
+      await axiosInstance.post(`/volunteer/tickets/${pickupId}/status`, { status });
     },
 
     // List active tickets

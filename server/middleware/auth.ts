@@ -1,7 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { supabaseAuth } from '../../lib/db/supabase';
+import { supabase, supabaseAuth } from '../../lib/db/supabase';
 import type { Database } from '../../lib/db/types';
-import type { User } from '@supabase/supabase-js';
+import type { User as AuthUser } from '@supabase/supabase-js';
+
+type User = AuthUser & {
+  role: string;
+};
 
 // Extend the Request type to include our user
 declare global {
@@ -33,7 +37,8 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     }
 
     // Get additional user data from the database
-    const { data: dbUser, error: dbError } = await supabaseAuth.from('users')
+    const { data: dbUser, error: dbError } = await supabase
+      .from('users')
       .select('*')
       .eq('id', user.id)
       .single();
