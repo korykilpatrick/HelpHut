@@ -147,9 +147,9 @@ export function DashboardPage() {
 
   const metrics: DashboardMetric[] = [
     {
-      label: 'Active Requests',
+      label: 'Available Donations',
       value: dashboardData?.metrics.activeRequests || 0,
-      description: 'Pending donation requests',
+      description: 'Unclaimed donations',
       icon: Package
     },
     {
@@ -189,7 +189,7 @@ export function DashboardPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Partner Dashboard</h1>
         <p className="mt-2 text-muted-foreground">
-          Manage your donation requests and inventory
+          View available donations and manage deliveries
         </p>
       </div>
 
@@ -198,10 +198,10 @@ export function DashboardPage() {
         <BaseButton
           variant="default"
           size="lg"
-          onClick={() => navigate('/partner/requests')}
+          onClick={() => navigate('/partner/available-donations')}
           className="flex-1"
         >
-          Create New Request
+          View Available Donations
         </BaseButton>
         <BaseButton
           variant="outline"
@@ -271,12 +271,12 @@ export function DashboardPage() {
             </div>
           </BaseCard>
 
-          {/* Top Requested Items */}
+          {/* Most Needed Items */}
           <BaseCard
             header={
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold">Most Requested Items</h3>
+                  <h3 className="text-lg font-semibold">Most Needed Items</h3>
                   <p className="text-sm text-muted-foreground">Popular items this month</p>
                 </div>
                 <PieChart className="h-5 w-5 text-muted-foreground" />
@@ -369,20 +369,20 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* Recent Requests */}
+      {/* Recent Donations */}
       <BaseCard
         header={
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold">Recent Requests</h2>
+              <h2 className="text-lg font-semibold">Recent Donations</h2>
               <p className="text-sm text-muted-foreground">
-                Your latest donation requests
+                Your latest claimed donations
               </p>
             </div>
             <BaseButton
               variant="outline"
               size="sm"
-              onClick={() => navigate('/partner/requests')}
+              onClick={() => navigate('/partner/available-donations')}
             >
               View All
             </BaseButton>

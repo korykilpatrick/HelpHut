@@ -20,6 +20,7 @@ import { InventoryPage } from '../../portals/partner/pages/InventoryPage';
 import { RequestsPage } from '../../portals/partner/pages/RequestsPage';
 import { DeliverySchedulePage } from '../../portals/partner/pages/DeliverySchedulePage';
 import { RouteGuard } from '../auth/RouteGuard';
+import { AvailableDonationsPage } from '../../portals/partner/pages/AvailableDonationsPage';
 
 export function AppRoutes() {
   return (
@@ -75,7 +76,7 @@ export function AppRoutes() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<PartnerDashboard />} />
         <Route path="inventory" element={<InventoryPage />} />
-        <Route path="requests" element={<RequestsPage />} />
+        <Route path="available-donations" element={<AvailableDonationsPage />} />
         <Route path="schedule" element={<DeliverySchedulePage />} />
       </Route>
 

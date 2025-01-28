@@ -25,12 +25,15 @@ interface PortalFeature {
 // Group features by section
 const groupFeatures = (features: PortalFeature[]) => {
   const groups = {
-    overview: features.filter(f => ['dashboard', 'inventory', 'requests'].includes(f.id)),
-    planning: features.filter(f => ['schedule', 'impact'].includes(f.id)),
-    relationships: features.filter(f => ['donors', 'requirements'].includes(f.id)),
+    overview: features.filter(f => ['dashboard'].includes(f.id)),
+    donations: features.filter(f => ['available-donations', 'claimed-donations'].includes(f.id)),
+    inventory: features.filter(f => ['inventory'].includes(f.id)),
+    impact: features.filter(f => ['impact'].includes(f.id)),
+    organization: features.filter(f => ['donors', 'requirements'].includes(f.id)),
+    settings: features.filter(f => ['settings'].includes(f.id)),
+    // Keep other portal groupings
     foodRescue: features.filter(f => ['available-pickups', 'active-deliveries', 'delivery-history', 'quick-donate', 'donation-history'].includes(f.id)),
-    schedule: features.filter(f => ['availability', 'coverage-areas'].includes(f.id)),
-    impact: features.filter(f => ['impact', 'leaderboard', 'recipients'].includes(f.id)),
+    schedule: features.filter(f => ['availability', 'coverage-areas'].includes(f.id))
   };
 
   return Object.entries(groups).filter(([_, items]) => items.length > 0);

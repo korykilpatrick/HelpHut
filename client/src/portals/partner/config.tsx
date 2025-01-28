@@ -4,25 +4,42 @@ import {
   Home,
   Package,
   Warehouse,
-  Calendar,
   BarChart3,
   Settings,
   Users,
-  ClipboardList
+  ClipboardList,
+  Calendar
 } from 'lucide-react';
 
 export const partnerPortalConfig: PortalConfig = {
   role: 'partner',
   title: 'Partner Portal',
-  description: 'Request and receive food donations, manage inventory',
+  description: 'View and claim available donations, manage inventory',
   features: [
+    // Overview section
     {
       id: 'dashboard',
       title: 'Dashboard',
-      description: 'View your donation requests and inventory status',
+      description: 'View available donations and delivery status',
       icon: Home,
       path: '/partner/dashboard'
     },
+    // Donations section
+    {
+      id: 'available-donations',
+      title: 'Available Donations',
+      description: 'View and claim available food donations',
+      icon: Package,
+      path: '/partner/available-donations'
+    },
+    {
+      id: 'claimed-donations',
+      title: 'Claimed Donations',
+      description: 'Track your claimed donations and deliveries',
+      icon: Calendar,
+      path: '/partner/claimed-donations'
+    },
+    // Inventory section
     {
       id: 'inventory',
       title: 'Inventory',
@@ -30,27 +47,15 @@ export const partnerPortalConfig: PortalConfig = {
       icon: Warehouse,
       path: '/partner/inventory'
     },
-    {
-      id: 'requests',
-      title: 'Donation Requests',
-      description: 'Create and manage donation requests',
-      icon: Package,
-      path: '/partner/requests'
-    },
-    {
-      id: 'schedule',
-      title: 'Delivery Schedule',
-      description: 'View upcoming and past deliveries',
-      icon: Calendar,
-      path: '/partner/schedule'
-    },
+    // Impact section
     {
       id: 'impact',
       title: 'Impact Metrics',
-      description: 'Track the impact of received donations',
+      description: 'Track your community impact and donation history',
       icon: BarChart3,
       path: '/partner/impact'
     },
+    // Organization section
     {
       id: 'donors',
       title: 'Our Donors',
@@ -65,6 +70,7 @@ export const partnerPortalConfig: PortalConfig = {
       icon: ClipboardList,
       path: '/partner/requirements'
     },
+    // Settings section
     {
       id: 'settings',
       title: 'Settings',

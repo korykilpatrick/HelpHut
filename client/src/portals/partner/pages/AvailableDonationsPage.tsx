@@ -1,13 +1,13 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
-  Plus,
   Search,
   AlertCircle,
   ArrowUpDown,
   Clock,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Package
 } from 'lucide-react';
 import { api } from '../../../core/api';
 import BaseCard from '../../../shared/components/base/BaseCard';
@@ -73,19 +73,19 @@ const formatDate = (dateString: string) => {
   });
 };
 
-export function RequestsPage() {
+export function AvailableDonationsPage() {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [sortField, setSortField] = React.useState<keyof DonationRequest>('requestedDate');
   const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
 
-  // Fetch requests data
-  const { data: requestsData, isLoading } = useQuery({
-    queryKey: ['partnerRequests'],
+  // Fetch available donations data
+  const { data: donationsData, isLoading } = useQuery({
+    queryKey: ['availableDonations'],
     queryFn: async () => {
       try {
-        // TODO: Replace with actual API call
+        // TODO: Replace with actual API call to /partners/donations/available
         return {
-          requests: [
+          donations: [
             {
               id: '1',
               foodType: 'Fresh Produce',
@@ -94,58 +94,57 @@ export function RequestsPage() {
               status: 'pending',
               urgency: 'high',
               requestedDate: '2024-01-25T14:30:00Z',
-              notes: 'Need fresh vegetables and fruits for community meal'
+              notes: 'Fresh vegetables and fruits available'
             },
             {
               id: '2',
               foodType: 'Canned Goods',
               quantity: 200,
               unit: 'items',
-              status: 'approved',
+              status: 'pending',
               urgency: 'medium',
               requestedDate: '2024-01-24T10:00:00Z',
               donorName: 'Local Market',
-              notes: 'Non-perishable items for food bank'
+              notes: 'Non-perishable items available'
             },
             {
               id: '3',
               foodType: 'Bread',
               quantity: 50,
               unit: 'loaves',
-              status: 'completed',
+              status: 'pending',
               urgency: 'low',
               requestedDate: '2024-01-23T09:00:00Z',
               donorName: 'City Bakery',
-              notes: 'Weekly bread donation'
+              notes: 'Fresh bread available for pickup'
             }
           ] as DonationRequest[]
         };
       } catch (error) {
-        console.error('Error fetching requests data:', error);
+        console.error('Error fetching available donations:', error);
         throw error;
       }
     }
   });
 
-  const sortedAndFilteredRequests = React.useMemo(() => {
-    let requests = [...(requestsData?.requests || [])];
+  const sortedAndFilteredDonations = React.useMemo(() => {
+    let donations = [...(donationsData?.donations || [])];
     
     // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      requests = requests.filter(request => 
-        request.foodType.toLowerCase().includes(query) ||
-        request.notes?.toLowerCase().includes(query) ||
-        request.donorName?.toLowerCase().includes(query)
+      donations = donations.filter(donation => 
+        donation.foodType.toLowerCase().includes(query) ||
+        donation.notes?.toLowerCase().includes(query) ||
+        donation.donorName?.toLowerCase().includes(query)
       );
     }
 
     // Apply sorting
-    requests.sort((a, b) => {
+    donations.sort((a, b) => {
       const aValue = a[sortField];
       const bValue = b[sortField];
       
-      // Handle undefined values
       if (aValue === undefined && bValue === undefined) return 0;
       if (aValue === undefined) return 1;
       if (bValue === undefined) return -1;
@@ -155,8 +154,8 @@ export function RequestsPage() {
       return 0;
     });
 
-    return requests;
-  }, [requestsData?.requests, searchQuery, sortField, sortDirection]);
+    return donations;
+  }, [donationsData?.donations, searchQuery, sortField, sortDirection]);
 
   const handleSort = (field: keyof DonationRequest) => {
     if (field === sortField) {
@@ -171,9 +170,9 @@ export function RequestsPage() {
     <div className="container mx-auto py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Donation Requests</h1>
+        <h1 className="text-3xl font-bold">Available Donations</h1>
         <p className="mt-2 text-muted-foreground">
-          Create and manage your donation requests
+          View and claim available food donations
         </p>
       </div>
 
@@ -181,7 +180,7 @@ export function RequestsPage() {
       <div className="mb-6 flex items-center justify-between gap-4">
         <div className="flex-1 max-w-sm relative">
           <BaseInput
-            placeholder="Search requests..."
+            placeholder="Search donations..."
             value={searchQuery}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
           />
@@ -189,17 +188,9 @@ export function RequestsPage() {
             <Search className="h-4 w-4 text-muted-foreground" />
           </div>
         </div>
-        <BaseButton
-          variant="default"
-          size="default"
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          New Request
-        </BaseButton>
       </div>
 
-      {/* Requests Table */}
+      {/* Donations Table */}
       <BaseCard>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -234,10 +225,10 @@ export function RequestsPage() {
                 </th>
                 <th 
                   className="px-4 py-3 text-left"
-                  onClick={() => handleSort('status')}
+                  onClick={() => handleSort('donorName')}
                 >
                   <div className="flex items-center gap-2 cursor-pointer hover:text-primary">
-                    <span>Status</span>
+                    <span>Donor</span>
                     <ArrowUpDown className="h-4 w-4" />
                   </div>
                 </th>
@@ -246,7 +237,7 @@ export function RequestsPage() {
                   onClick={() => handleSort('requestedDate')}
                 >
                   <div className="flex items-center gap-2 cursor-pointer hover:text-primary">
-                    <span>Requested Date</span>
+                    <span>Available Since</span>
                     <ArrowUpDown className="h-4 w-4" />
                   </div>
                 </th>
@@ -254,74 +245,50 @@ export function RequestsPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {sortedAndFilteredRequests.map((request) => {
-                const StatusIcon = getStatusIcon(request.status);
-                return (
-                  <tr key={request.id} className="hover:bg-muted/50">
-                    <td className="px-4 py-3">
-                      <BaseText weight="medium">{request.foodType}</BaseText>
-                      {request.notes && (
-                        <BaseText size="sm" variant="muted" className="mt-0.5">
-                          {request.notes}
-                        </BaseText>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <BaseText>{request.quantity} {request.unit}</BaseText>
-                    </td>
-                    <td className="px-4 py-3">
-                      <BaseBadge variant={getUrgencyColor(request.urgency)}>
-                        {request.urgency.charAt(0).toUpperCase() + request.urgency.slice(1)}
-                      </BaseBadge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <BaseBadge 
-                        variant={getStatusColor(request.status)}
-                        icon={<StatusIcon className="h-3.5 w-3.5" />}
-                      >
-                        {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                      </BaseBadge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <BaseText>{formatDate(request.requestedDate)}</BaseText>
-                      {request.donorName && (
-                        <BaseText size="sm" variant="muted" className="mt-0.5">
-                          From: {request.donorName}
-                        </BaseText>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end">
-                        <BaseButton
-                          variant="ghost"
-                          size="sm"
-                        >
-                          View Details
-                        </BaseButton>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+              {sortedAndFilteredDonations.map((donation) => (
+                <tr key={donation.id} className="hover:bg-muted/50">
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-muted-foreground" />
+                      <BaseText>{donation.foodType}</BaseText>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <BaseText>{donation.quantity} {donation.unit}</BaseText>
+                  </td>
+                  <td className="px-4 py-4">
+                    <BaseBadge variant={getUrgencyColor(donation.urgency)}>
+                      {donation.urgency.charAt(0).toUpperCase() + donation.urgency.slice(1)}
+                    </BaseBadge>
+                  </td>
+                  <td className="px-4 py-4">
+                    <BaseText>{donation.donorName || 'Anonymous'}</BaseText>
+                  </td>
+                  <td className="px-4 py-4">
+                    <BaseText>{formatDate(donation.requestedDate)}</BaseText>
+                  </td>
+                  <td className="px-4 py-4 text-right">
+                    <BaseButton
+                      variant="default"
+                      size="sm"
+                      onClick={() => {
+                        // TODO: Implement claim functionality
+                        console.log('Claim donation:', donation.id);
+                      }}
+                    >
+                      Claim
+                    </BaseButton>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
-
-          {/* Empty State */}
-          {(!requestsData?.requests || requestsData.requests.length === 0) && (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-center">
-                <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                <BaseText variant="muted" className="mt-2">
-                  No donation requests found
-                </BaseText>
-                <BaseButton
-                  variant="outline"
-                  size="sm"
-                  className="mt-4"
-                >
-                  Create First Request
-                </BaseButton>
-              </div>
+          {sortedAndFilteredDonations.length === 0 && (
+            <div className="py-12 text-center">
+              <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground/50" />
+              <BaseText variant="muted" className="mt-2">
+                No available donations found
+              </BaseText>
             </div>
           )}
         </div>
