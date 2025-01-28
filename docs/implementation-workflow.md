@@ -10,15 +10,34 @@
 > Focus: Enable the basic food rescue workflow
 
 ### 1. Partner Organization Essentials
-- [ ] Basic partner authentication
+- ✅ Basic partner authentication
+- [ ] Partner Portal Navigation
+  ✅ Update portal configuration
+  ✅ Fix sidebar grouping and rendering
+  - [ ] Ensure proper route protection
 - [ ] Simple partner dashboard
   - [ ] List of available donations
   - [ ] Basic claim functionality
   - [ ] View claimed donations
+- [ ] Partner Pages Implementation
+  ✅ Update AppRoutes.tsx with new routes
+  ✅ Create AvailableDonationsPage
+  - [ ] Create ClaimedDonationsPage
+  - [ ] Connect AvailableDonationsPage to API
+  - [ ] Add claim functionality to AvailableDonationsPage
+  - [ ] Add delivery tracking to ClaimedDonationsPage
 - [ ] Partner API endpoints
   - [ ] List available donations
+    - [ ] Filter out already claimed donations
+    - [ ] Include donation details and requirements
   - [ ] Claim donation
+    - [ ] Update ticket status
+    - [ ] Associate partner with ticket
+    - [ ] Handle concurrent claims
   - [ ] List claimed donations
+    - [ ] Show delivery status
+    - [ ] Include volunteer assignment info
+    - [ ] Track delivery progress
 
 ### 2. Volunteer Essentials
 ✅ Basic volunteer authentication

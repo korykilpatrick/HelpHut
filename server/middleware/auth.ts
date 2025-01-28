@@ -3,8 +3,15 @@ import { supabase, supabaseAuth } from '../../lib/db/supabase';
 import type { Database } from '../../lib/db/types';
 import type { User as AuthUser } from '@supabase/supabase-js';
 
+type DbUser = Database['public']['Tables']['users']['Row'] & {
+  partners: { id: string } | null;
+  donors: { id: string } | null;
+  volunteers: { id: string } | null;
+};
+
 type User = AuthUser & {
   role: string;
+  organizationId?: string;
 };
 
 // Extend the Request type to include our user
@@ -39,7 +46,12 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     // Get additional user data from the database
     const { data: dbUser, error: dbError } = await supabase
       .from('users')
-      .select('*')
+      .select(`
+        *,
+        partners!partners_user_id_fkey(id),
+        donors!donors_user_id_fkey(id),
+        volunteers!volunteers_user_id_fkey(id)
+      `)
       .eq('id', user.id)
       .single();
 
@@ -48,12 +60,29 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       return res.status(401).json({ error: 'Failed to fetch user data' });
     }
 
+    const typedDbUser = dbUser as DbUser;
+
+    // Get organization ID based on role
+    let organizationId: string | undefined;
+    switch (typedDbUser.role.toLowerCase()) {
+      case 'partner':
+        organizationId = typedDbUser.partners?.id;
+        break;
+      case 'donor':
+        organizationId = typedDbUser.donors?.id;
+        break;
+      case 'volunteer':
+        organizationId = typedDbUser.volunteers?.id;
+        break;
+    }
+
     // Attach the user to the request
     req.user = {
       ...user,
-      role: dbUser.role
+      role: typedDbUser.role,
+      organizationId
     };
-    console.log('User authenticated:', { id: req.user.id, role: dbUser.role });
+    console.log('User authenticated:', { id: user.id, role: typedDbUser.role, organizationId });
 
     next();
   } catch (error) {

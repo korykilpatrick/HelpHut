@@ -136,6 +136,8 @@ export const api = {
       axiosInstance.patch(`/donations/${id}`, data),
     deleteDonation: (id: string) =>
       axiosInstance.delete(`/donations/${id}`),
+    claimDonation: (id: string) =>
+      axiosInstance.post(`/donations/${id}/claim`),
   },
   donors: {
     list: () => axiosInstance.get('/donors'),

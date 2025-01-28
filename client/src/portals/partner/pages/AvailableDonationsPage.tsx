@@ -1,5 +1,5 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Search,
   AlertCircle,
@@ -15,132 +15,164 @@ import { BaseButton } from '../../../shared/components/base/BaseButton';
 import BaseText from '../../../shared/components/base/BaseText';
 import BaseBadge from '../../../shared/components/base/BaseBadge';
 import BaseInput from '../../../shared/components/base/BaseInput';
+import { toast } from '../../../shared/components/toast';
 
-interface DonationRequest {
+// Define the base donation type
+interface Donation {
   id: string;
-  foodType: string;
+  donorId: string;
+  foodTypeId: string;
   quantity: number;
   unit: string;
-  status: 'pending' | 'approved' | 'rejected' | 'completed';
-  urgency: 'low' | 'medium' | 'high';
-  requestedDate: string;
-  donorName?: string;
+  pickupWindowStart: string;
+  pickupWindowEnd: string;
   notes?: string;
 }
 
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'completed':
-      return CheckCircle2;
-    case 'rejected':
-      return XCircle;
-    default:
-      return Clock;
-  }
-};
+interface DonationWithUrgency extends Donation {
+  urgency: 'low' | 'medium' | 'high';
+}
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'completed':
-      return 'success';
-    case 'approved':
-      return 'primary';
-    case 'rejected':
-      return 'error';
-    default:
-      return 'warning';
-  }
-};
+type SortableFields = keyof Pick<DonationWithUrgency, 'pickupWindowStart' | 'foodTypeId' | 'quantity' | 'urgency' | 'donorId'>;
 
-const getUrgencyColor = (urgency: string) => {
+function getUrgencyFromDates(start: Date, end: Date): 'low' | 'medium' | 'high' {
+  const now = new Date();
+  const hoursUntilEnd = Math.floor((end.getTime() - now.getTime()) / (1000 * 60 * 60));
+  
+  if (hoursUntilEnd <= 4) return 'high';
+  if (hoursUntilEnd <= 12) return 'medium';
+  return 'low';
+}
+
+function getUrgencyColor(urgency: 'low' | 'medium' | 'high'): 'success' | 'warning' | 'error' {
   switch (urgency) {
-    case 'high':
-      return 'error';
-    case 'medium':
-      return 'warning';
     case 'low':
       return 'success';
-    default:
-      return 'default';
+    case 'medium':
+      return 'warning';
+    case 'high':
+      return 'error';
   }
-};
+}
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
-    year: 'numeric'
+    hour: 'numeric',
+    minute: '2-digit'
   });
-};
+}
 
 export function AvailableDonationsPage() {
+  console.log('🔄 AvailableDonationsPage rendering');
+  
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [sortField, setSortField] = React.useState<keyof DonationRequest>('requestedDate');
+  const [sortField, setSortField] = React.useState<SortableFields>('pickupWindowStart');
   const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
 
   // Fetch available donations data
-  const { data: donationsData, isLoading } = useQuery({
+  const { data: donationsData, isLoading, error } = useQuery({
     queryKey: ['availableDonations'],
     queryFn: async () => {
+      console.log('📡 Fetching available donations...');
       try {
-        // TODO: Replace with actual API call to /partners/donations/available
-        return {
-          donations: [
-            {
-              id: '1',
-              foodType: 'Fresh Produce',
-              quantity: 100,
-              unit: 'lbs',
-              status: 'pending',
-              urgency: 'high',
-              requestedDate: '2024-01-25T14:30:00Z',
-              notes: 'Fresh vegetables and fruits available'
-            },
-            {
-              id: '2',
-              foodType: 'Canned Goods',
-              quantity: 200,
-              unit: 'items',
-              status: 'pending',
-              urgency: 'medium',
-              requestedDate: '2024-01-24T10:00:00Z',
-              donorName: 'Local Market',
-              notes: 'Non-perishable items available'
-            },
-            {
-              id: '3',
-              foodType: 'Bread',
-              quantity: 50,
-              unit: 'loaves',
-              status: 'pending',
-              urgency: 'low',
-              requestedDate: '2024-01-23T09:00:00Z',
-              donorName: 'City Bakery',
-              notes: 'Fresh bread available for pickup'
+        const response = await api.donations.getDonations({
+          limit: 100,
+          status: 'submitted'
+        });
+        console.log('✅ Raw API response:', response);
+        
+        // Extract donations array from nested response
+        const donationsArray = response.data.donations.donations;
+        console.log('✅ Raw donations array:', donationsArray);
+
+        if (!Array.isArray(donationsArray)) {
+          console.error('❌ Donations is not an array:', donationsArray);
+          throw new Error('Invalid donations data structure');
+        }
+
+        const mappedDonations = donationsArray.map((donation: Donation) => {
+          const urgency = getUrgencyFromDates(
+            new Date(donation.pickupWindowStart), 
+            new Date(donation.pickupWindowEnd)
+          );
+          console.log(`🏷️ Mapped donation ${donation.id}:`, {
+            foodType: donation.foodTypeId,
+            quantity: donation.quantity,
+            urgency,
+            pickupWindow: {
+              start: donation.pickupWindowStart,
+              end: donation.pickupWindowEnd
             }
-          ] as DonationRequest[]
-        };
-      } catch (error) {
-        console.error('Error fetching available donations:', error);
-        throw error;
+          });
+          return {
+            ...donation,
+            urgency
+          };
+        }) as DonationWithUrgency[];
+
+        console.log('✨ Processed donations:', mappedDonations);
+        return { donations: mappedDonations };
+      } catch (err) {
+        console.error('❌ Error fetching donations:', err);
+        throw err;
       }
     }
   });
 
+  // Claim donation mutation
+  const claimDonationMutation = useMutation({
+    mutationFn: async (donationId: string) => {
+      console.log('🎯 Attempting to claim donation:', donationId);
+      try {
+        await api.donations.claimDonation(donationId);
+        console.log('✅ Successfully claimed donation:', donationId);
+      } catch (err) {
+        console.error('❌ Error claiming donation:', err);
+        throw err;
+      }
+    },
+    onSuccess: () => {
+      console.log('🔄 Claim successful, invalidating queries...');
+      toast.success("Donation claimed successfully");
+      queryClient.invalidateQueries({ queryKey: ['availableDonations'] });
+    },
+    onError: (error) => {
+      console.error('❌ Claim mutation error:', error);
+      toast.error("Failed to claim donation. Please try again.");
+    }
+  });
+
   const sortedAndFilteredDonations = React.useMemo(() => {
+    console.log('🔄 Recalculating sorted and filtered donations');
+    console.log('Current state:', {
+      searchQuery,
+      sortField,
+      sortDirection,
+      donationsCount: donationsData?.donations?.length
+    });
+
     let donations = [...(donationsData?.donations || [])];
     
     // Apply search filter
     if (searchQuery) {
+      console.log('🔍 Applying search filter:', searchQuery);
       const query = searchQuery.toLowerCase();
-      donations = donations.filter(donation => 
-        donation.foodType.toLowerCase().includes(query) ||
-        donation.notes?.toLowerCase().includes(query) ||
-        donation.donorName?.toLowerCase().includes(query)
-      );
+      donations = donations.filter(donation => {
+        const matches = donation.foodTypeId.toLowerCase().includes(query) ||
+          donation.notes?.toLowerCase().includes(query);
+        if (matches) {
+          console.log('✅ Donation matches search:', donation.id);
+        }
+        return matches;
+      });
+      console.log('🔍 After search filter:', donations.length, 'donations');
     }
 
     // Apply sorting
+    console.log('📊 Applying sort:', { field: sortField, direction: sortDirection });
     donations.sort((a, b) => {
       const aValue = a[sortField];
       const bValue = b[sortField];
@@ -154,10 +186,28 @@ export function AvailableDonationsPage() {
       return 0;
     });
 
+    console.log('📊 After sorting:', donations.map(d => ({
+      id: d.id,
+      [sortField]: d[sortField]
+    })));
+
     return donations;
   }, [donationsData?.donations, searchQuery, sortField, sortDirection]);
 
-  const handleSort = (field: keyof DonationRequest) => {
+  // Log component state on each render
+  React.useEffect(() => {
+    console.log('📊 Component State:', {
+      isLoading,
+      hasError: !!error,
+      donationsCount: donationsData?.donations?.length,
+      filteredCount: sortedAndFilteredDonations.length,
+      searchQuery,
+      sortField,
+      sortDirection
+    });
+  });
+
+  const handleSort = (field: SortableFields) => {
     if (field === sortField) {
       setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
     } else {
@@ -165,6 +215,21 @@ export function AvailableDonationsPage() {
       setSortDirection('asc');
     }
   };
+
+  if (error) {
+    return (
+      <div className="container mx-auto py-8">
+        <BaseCard>
+          <div className="p-6 text-center">
+            <AlertCircle className="mx-auto h-12 w-12 text-error" />
+            <BaseText variant="error" className="mt-2">
+              Error loading available donations. Please try again later.
+            </BaseText>
+          </div>
+        </BaseCard>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-8">
@@ -198,7 +263,7 @@ export function AvailableDonationsPage() {
               <tr className="border-b">
                 <th 
                   className="px-4 py-3 text-left"
-                  onClick={() => handleSort('foodType')}
+                  onClick={() => handleSort('foodTypeId')}
                 >
                   <div className="flex items-center gap-2 cursor-pointer hover:text-primary">
                     <span>Food Type</span>
@@ -225,7 +290,7 @@ export function AvailableDonationsPage() {
                 </th>
                 <th 
                   className="px-4 py-3 text-left"
-                  onClick={() => handleSort('donorName')}
+                  onClick={() => handleSort('donorId')}
                 >
                   <div className="flex items-center gap-2 cursor-pointer hover:text-primary">
                     <span>Donor</span>
@@ -234,10 +299,10 @@ export function AvailableDonationsPage() {
                 </th>
                 <th 
                   className="px-4 py-3 text-left"
-                  onClick={() => handleSort('requestedDate')}
+                  onClick={() => handleSort('pickupWindowStart')}
                 >
                   <div className="flex items-center gap-2 cursor-pointer hover:text-primary">
-                    <span>Available Since</span>
+                    <span>Pickup Window</span>
                     <ArrowUpDown className="h-4 w-4" />
                   </div>
                 </th>
@@ -245,45 +310,68 @@ export function AvailableDonationsPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {sortedAndFilteredDonations.map((donation) => (
-                <tr key={donation.id} className="hover:bg-muted/50">
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-muted-foreground" />
-                      <BaseText>{donation.foodType}</BaseText>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <Package className="h-8 w-8 animate-pulse text-muted-foreground" />
+                      <BaseText variant="muted" className="mt-2">
+                        Loading available donations...
+                      </BaseText>
                     </div>
                   </td>
-                  <td className="px-4 py-4">
-                    <BaseText>{donation.quantity} {donation.unit}</BaseText>
-                  </td>
-                  <td className="px-4 py-4">
-                    <BaseBadge variant={getUrgencyColor(donation.urgency)}>
-                      {donation.urgency.charAt(0).toUpperCase() + donation.urgency.slice(1)}
-                    </BaseBadge>
-                  </td>
-                  <td className="px-4 py-4">
-                    <BaseText>{donation.donorName || 'Anonymous'}</BaseText>
-                  </td>
-                  <td className="px-4 py-4">
-                    <BaseText>{formatDate(donation.requestedDate)}</BaseText>
-                  </td>
-                  <td className="px-4 py-4 text-right">
-                    <BaseButton
-                      variant="default"
-                      size="sm"
-                      onClick={() => {
-                        // TODO: Implement claim functionality
-                        console.log('Claim donation:', donation.id);
-                      }}
-                    >
-                      Claim
-                    </BaseButton>
-                  </td>
                 </tr>
-              ))}
+              ) : (
+                sortedAndFilteredDonations.map((donation) => (
+                  <tr key={donation.id} className="hover:bg-muted/50">
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                        <span>{donation.foodTypeId}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      {donation.quantity} {donation.unit}
+                    </td>
+                    <td className="px-4 py-4">
+                      <BaseBadge variant={getUrgencyColor(donation.urgency)}>
+                        {donation.urgency.toUpperCase()}
+                      </BaseBadge>
+                    </td>
+                    <td className="px-4 py-4">
+                      {donation.donorId}
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex flex-col">
+                        <span>Start: {formatDate(donation.pickupWindowStart)}</span>
+                        <span className="text-sm text-muted-foreground">
+                          End: {formatDate(donation.pickupWindowEnd)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <BaseButton
+                        variant="default"
+                        size="sm"
+                        onClick={() => claimDonationMutation.mutate(donation.id)}
+                        disabled={claimDonationMutation.isPending}
+                      >
+                        {claimDonationMutation.isPending ? (
+                          <>
+                            <span className="animate-spin mr-2">⟳</span>
+                            Claiming...
+                          </>
+                        ) : (
+                          'Claim'
+                        )}
+                      </BaseButton>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
-          {sortedAndFilteredDonations.length === 0 && (
+          {!isLoading && sortedAndFilteredDonations.length === 0 && (
             <div className="py-12 text-center">
               <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground/50" />
               <BaseText variant="muted" className="mt-2">
