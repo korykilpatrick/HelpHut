@@ -1,11 +1,19 @@
 import { supabase } from '../../db/supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+type ApiContext = {
+  user?: {
+    id: string;
+  };
+};
+
 export abstract class BaseApiImpl {
   protected db: SupabaseClient;
+  protected context?: ApiContext;
   
-  constructor() {
+  constructor(context?: ApiContext) {
     this.db = supabase;
+    this.context = context;
   }
 
   protected handleError(error: any): never {

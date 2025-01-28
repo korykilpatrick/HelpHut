@@ -9,11 +9,13 @@ type PartnerUpdate = Database['public']['Tables']['partners']['Update'];
 type Donation = {
   id: string;
   foodTypeId: string;
+  foodTypeName: string;
   quantity: number;
   unit: string;
   pickupWindowStart: Date;
   pickupWindowEnd: Date;
   donorId: string;
+  donorName: string;
   createdAt: Date;
   updatedAt: Date;
   requiresRefrigeration: boolean;
@@ -43,6 +45,10 @@ type DbDonation = Database['public']['Tables']['donations']['Row'] & {
 type DbTicket = Database['public']['Tables']['tickets']['Row'];
 
 export class PartnersApiImpl extends BaseApiImpl {
+  constructor(context?: { user?: { id: string } }) {
+    super(context);
+  }
+
   async listPartners(limit?: number, offset?: number): Promise<Partner[]> {
     try {
       let query = this.db
@@ -130,15 +136,15 @@ export class PartnersApiImpl extends BaseApiImpl {
 
   async listAvailableDonations(params: { limit?: number; offset?: number }): Promise<Donation[]> {
     try {
-      // Get donations that have tickets in 'Submitted' status and no partner_org_id
+      // Get donations that have no partner_org_id (unclaimed by partners)
       const { data, error } = await this.db
         .from('donations')
         .select(`
           *,
           food_type:food_types(*),
+          donor:donors(*),
           tickets!inner(*)
         `)
-        .eq('tickets.status', 'Submitted')
         .is('tickets.partner_org_id', null)
         .order('pickup_window_start', { ascending: true })
         .limit(params.limit || 10)
@@ -147,14 +153,16 @@ export class PartnersApiImpl extends BaseApiImpl {
       if (error) throw error;
       if (!data) return [];
 
-      return (data as DbDonation[]).map(row => ({
+      return (data as (DbDonation & { food_type: { name: string }; donor: { organization_name: string } })[]).map(row => ({
         id: row.id,
         foodTypeId: row.food_type_id || '',
+        foodTypeName: row.food_type?.name || '',
+        donorId: row.donor_id || '',
+        donorName: row.donor?.organization_name || '',
         quantity: row.quantity,
         unit: row.unit,
         pickupWindowStart: new Date(row.pickup_window_start),
         pickupWindowEnd: new Date(row.pickup_window_end),
-        donorId: row.donor_id || '',
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
         requiresRefrigeration: row.requires_refrigeration,
@@ -190,6 +198,7 @@ export class PartnersApiImpl extends BaseApiImpl {
         .select(`
           *,
           food_type:food_types(*),
+          donor:donors(*),
           tickets!inner(*)
         `)
         .eq('tickets.partner_org_id', partner.id)
@@ -200,14 +209,16 @@ export class PartnersApiImpl extends BaseApiImpl {
       if (error) throw error;
       if (!data) return [];
 
-      return (data as DbDonation[]).map(row => ({
+      return (data as (DbDonation & { food_type: { name: string }; donor: { organization_name: string } })[]).map(row => ({
         id: row.id,
         foodTypeId: row.food_type_id || '',
+        foodTypeName: row.food_type?.name || '',
+        donorId: row.donor_id || '',
+        donorName: row.donor?.organization_name || '',
         quantity: row.quantity,
         unit: row.unit,
         pickupWindowStart: new Date(row.pickup_window_start),
         pickupWindowEnd: new Date(row.pickup_window_end),
-        donorId: row.donor_id || '',
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
         requiresRefrigeration: row.requires_refrigeration,

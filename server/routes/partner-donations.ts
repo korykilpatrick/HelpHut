@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequest } from '../middleware/validate';
-import { createApi } from '../../lib/api/impl';
+import { api } from '../../lib/api/impl';
 import { requireAuth } from '../middleware/auth';
 import { DonationNotFoundError, DonationConflictError } from '../../lib/api/impl/donations';
+import { PartnersApiImpl } from '../../lib/api/impl/partners';
+import type { User } from '@supabase/supabase-js';
 
 const router = Router();
 
@@ -41,12 +43,15 @@ const handleError = (error: any, res: any) => {
 router.get('/available', requireAuth, async (req, res) => {
   try {
     const { limit = 10, offset = 0 } = req.query;
-    const api = createApi({ user: req.user! });
-    const donations = await api.partners.listAvailableDonations({
+    const user = req.user as User;
+    if (!user?.id) {
+      throw new Error('User ID not found');
+    }
+    const donations = await new PartnersApiImpl({ user: { id: user.id } }).listAvailableDonations({
       limit: limit ? parseInt(limit as string) : undefined,
       offset: offset ? parseInt(offset as string) : undefined
     });
-    res.json(donations);
+    res.json({ donations });
   } catch (error) {
     handleError(error, res);
   }
@@ -56,12 +61,15 @@ router.get('/available', requireAuth, async (req, res) => {
 router.get('/claimed', requireAuth, async (req, res) => {
   try {
     const { limit = 10, offset = 0 } = req.query;
-    const api = createApi({ user: req.user! });
-    const donations = await api.partners.listClaimedDonations({
+    const user = req.user as User;
+    if (!user?.id) {
+      throw new Error('User ID not found');
+    }
+    const donations = await new PartnersApiImpl({ user: { id: user.id } }).listClaimedDonations({
       limit: limit ? parseInt(limit as string) : undefined,
       offset: offset ? parseInt(offset as string) : undefined
     });
-    res.json(donations);
+    res.json({ donations });
   } catch (error) {
     handleError(error, res);
   }
@@ -70,8 +78,11 @@ router.get('/claimed', requireAuth, async (req, res) => {
 // POST /partners/donations/:id/claim - Claim a donation
 router.post('/:id/claim', requireAuth, async (req, res) => {
   try {
-    const api = createApi({ user: req.user! });
-    const ticket = await api.partners.claimDonation({ id: req.params.id });
+    const user = req.user as User;
+    if (!user?.id) {
+      throw new Error('User ID not found');
+    }
+    const ticket = await new PartnersApiImpl({ user: { id: user.id } }).claimDonation(req.params.id);
     res.json({
       ticket,
       message: 'Donation claimed successfully'

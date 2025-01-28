@@ -1,0 +1,164 @@
+import React from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { 
+  Search,
+  AlertCircle,
+  ArrowUpDown,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Package
+} from 'lucide-react';
+import { api } from '../../../core/api';
+import BaseCard from '../../../shared/components/base/BaseCard';
+import { BaseButton } from '../../../shared/components/base/BaseButton';
+import BaseText from '../../../shared/components/base/BaseText';
+import BaseBadge from '../../../shared/components/base/BaseBadge';
+import BaseInput from '../../../shared/components/base/BaseInput';
+import { toast } from '../../../shared/components/toast';
+
+// ... rest of the imports and types ...
+
+export function AvailableDonationsPage() {
+  // ... rest of the component logic ...
+
+  return (
+    <div className="container mx-auto py-8">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Available Donations</h1>
+        <p className="mt-2 text-muted-foreground">
+          View and claim available food donations
+        </p>
+      </div>
+
+      {/* Actions Bar */}
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div className="flex-1 max-w-sm relative">
+          <BaseInput
+            placeholder="Search donations..."
+            value={searchQuery}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+          />
+          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </div>
+      </div>
+
+      {/* Donations Table */}
+      <BaseCard>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b">
+                <th 
+                  className="px-4 py-3 text-left"
+                  onClick={() => handleSort('foodTypeId')}
+                >
+                  <div className="flex items-center gap-2 cursor-pointer hover:text-primary">
+                    <span>Food Type</span>
+                    <ArrowUpDown className="h-4 w-4" />
+                  </div>
+                </th>
+                <th 
+                  className="px-4 py-3 text-left"
+                  onClick={() => handleSort('quantity')}
+                >
+                  <div className="flex items-center gap-2 cursor-pointer hover:text-primary">
+                    <span>Quantity</span>
+                    <ArrowUpDown className="h-4 w-4" />
+                  </div>
+                </th>
+                <th 
+                  className="px-4 py-3 text-left"
+                  onClick={() => handleSort('urgency')}
+                >
+                  <div className="flex items-center gap-2 cursor-pointer hover:text-primary">
+                    <span>Urgency</span>
+                    <ArrowUpDown className="h-4 w-4" />
+                  </div>
+                </th>
+                <th 
+                  className="px-4 py-3 text-left"
+                  onClick={() => handleSort('donorId')}
+                >
+                  <div className="flex items-center gap-2 cursor-pointer hover:text-primary">
+                    <span>Donor</span>
+                    <ArrowUpDown className="h-4 w-4" />
+                  </div>
+                </th>
+                <th 
+                  className="px-4 py-3 text-left"
+                  onClick={() => handleSort('pickupWindowStart')}
+                >
+                  <div className="flex items-center gap-2 cursor-pointer hover:text-primary">
+                    <span>Pickup Window</span>
+                    <ArrowUpDown className="h-4 w-4" />
+                  </div>
+                </th>
+                <th className="px-4 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedAndFilteredDonations.map((donation) => (
+                <tr key={donation.id} className="border-b">
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-muted-foreground" />
+                      <span>{donation.foodTypeId}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    {donation.quantity} {donation.unit}
+                  </td>
+                  <td className="px-4 py-4">
+                    <BaseBadge variant={getUrgencyColor(donation.urgency)}>
+                      {donation.urgency.toUpperCase()}
+                    </BaseBadge>
+                  </td>
+                  <td className="px-4 py-4">
+                    {donation.donorId}
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex flex-col">
+                      <span>Start: {formatDate(donation.pickupWindowStart)}</span>
+                      <span className="text-sm text-muted-foreground">
+                        End: {formatDate(donation.pickupWindowEnd)}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 text-right">
+                    <BaseButton
+                      variant="default"
+                      size="sm"
+                      onClick={() => claimDonationMutation.mutate(donation.id)}
+                      disabled={claimDonationMutation.isPending}
+                    >
+                      {claimDonationMutation.isPending ? (
+                        <>
+                          <span className="animate-spin mr-2">⟳</span>
+                          Claiming...
+                        </>
+                      ) : (
+                        'Claim'
+                      )}
+                    </BaseButton>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!isLoading && sortedAndFilteredDonations.length === 0 && (
+            <div className="py-12 text-center">
+              <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground/50" />
+              <BaseText variant="muted" className="mt-2">
+                No available donations found
+              </BaseText>
+            </div>
+          )}
+        </div>
+      </BaseCard>
+    </div>
+  );
+} 

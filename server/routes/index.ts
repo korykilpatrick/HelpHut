@@ -8,6 +8,7 @@ import { ticketsRouter } from './tickets';
 import { foodTypesRouter } from './food-types';
 import authRouter from './auth';
 import volunteerRouter from './volunteer';
+import { partnerDonationsRouter } from './partner-donations';
 import { caseTransformMiddleware } from '../middleware/case-transform';
 
 export function createApiRouter() {
@@ -23,6 +24,7 @@ export function createApiRouter() {
   router.use('/volunteers', volunteersRouter);
   router.use('/volunteer', volunteerRouter);
   router.use('/partners', partnersRouter);
+  router.use('/partners/donations', partnerDonationsRouter);
   router.use('/donations', donationsRouter);
   router.use('/tickets', ticketsRouter);
   router.use('/food-types', foodTypesRouter);

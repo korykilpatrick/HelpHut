@@ -21,7 +21,9 @@ import { toast } from '../../../shared/components/toast';
 interface Donation {
   id: string;
   donorId: string;
+  donorName: string;
   foodTypeId: string;
+  foodTypeName: string;
   quantity: number;
   unit: string;
   pickupWindowStart: string;
@@ -33,7 +35,7 @@ interface DonationWithUrgency extends Donation {
   urgency: 'low' | 'medium' | 'high';
 }
 
-type SortableFields = keyof Pick<DonationWithUrgency, 'pickupWindowStart' | 'foodTypeId' | 'quantity' | 'urgency' | 'donorId'>;
+type SortableFields = keyof Pick<DonationWithUrgency, 'pickupWindowStart' | 'foodTypeName' | 'quantity' | 'urgency' | 'donorName'>;
 
 function getUrgencyFromDates(start: Date, end: Date): 'low' | 'medium' | 'high' {
   const now = new Date();
@@ -70,7 +72,7 @@ export function AvailableDonationsPage() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [sortField, setSortField] = React.useState<SortableFields>('pickupWindowStart');
-  const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
+  const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('asc');
 
   // Fetch available donations data
   const { data: donationsData, isLoading, error } = useQuery({
@@ -78,22 +80,15 @@ export function AvailableDonationsPage() {
     queryFn: async () => {
       console.log('📡 Fetching available donations...');
       try {
-        const response = await api.donations.getDonations({
-          limit: 100,
-          status: 'submitted'
-        });
-        console.log('✅ Raw API response:', response);
+        const donations = await api.partners.listAvailableDonations();
+        console.log('✅ Raw API response:', donations);
         
-        // Extract donations array from nested response
-        const donationsArray = response.data.donations.donations;
-        console.log('✅ Raw donations array:', donationsArray);
-
-        if (!Array.isArray(donationsArray)) {
-          console.error('❌ Donations is not an array:', donationsArray);
+        if (!Array.isArray(donations)) {
+          console.error('❌ Donations is not an array:', donations);
           throw new Error('Invalid donations data structure');
         }
 
-        const mappedDonations = donationsArray.map((donation: Donation) => {
+        const mappedDonations = donations.map((donation: Donation) => {
           const urgency = getUrgencyFromDates(
             new Date(donation.pickupWindowStart), 
             new Date(donation.pickupWindowEnd)
@@ -127,16 +122,17 @@ export function AvailableDonationsPage() {
     mutationFn: async (donationId: string) => {
       console.log('🎯 Attempting to claim donation:', donationId);
       try {
-        await api.donations.claimDonation(donationId);
-        console.log('✅ Successfully claimed donation:', donationId);
+        const response = await api.partners.claimDonation(donationId);
+        console.log('✅ Successfully claimed donation:', response);
+        return response;
       } catch (err) {
         console.error('❌ Error claiming donation:', err);
         throw err;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       console.log('🔄 Claim successful, invalidating queries...');
-      toast.success("Donation claimed successfully");
+      toast.success(data.message);
       queryClient.invalidateQueries({ queryKey: ['availableDonations'] });
     },
     onError: (error) => {
@@ -161,7 +157,8 @@ export function AvailableDonationsPage() {
       console.log('🔍 Applying search filter:', searchQuery);
       const query = searchQuery.toLowerCase();
       donations = donations.filter(donation => {
-        const matches = donation.foodTypeId.toLowerCase().includes(query) ||
+        const matches = donation.foodTypeName.toLowerCase().includes(query) ||
+          donation.donorName.toLowerCase().includes(query) ||
           donation.notes?.toLowerCase().includes(query);
         if (matches) {
           console.log('✅ Donation matches search:', donation.id);
@@ -263,7 +260,7 @@ export function AvailableDonationsPage() {
               <tr className="border-b">
                 <th 
                   className="px-4 py-3 text-left"
-                  onClick={() => handleSort('foodTypeId')}
+                  onClick={() => handleSort('foodTypeName')}
                 >
                   <div className="flex items-center gap-2 cursor-pointer hover:text-primary">
                     <span>Food Type</span>
@@ -290,7 +287,7 @@ export function AvailableDonationsPage() {
                 </th>
                 <th 
                   className="px-4 py-3 text-left"
-                  onClick={() => handleSort('donorId')}
+                  onClick={() => handleSort('donorName')}
                 >
                   <div className="flex items-center gap-2 cursor-pointer hover:text-primary">
                     <span>Donor</span>
@@ -323,11 +320,11 @@ export function AvailableDonationsPage() {
                 </tr>
               ) : (
                 sortedAndFilteredDonations.map((donation) => (
-                  <tr key={donation.id} className="hover:bg-muted/50">
+                  <tr key={donation.id} className="border-b">
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
                         <Package className="h-4 w-4 text-muted-foreground" />
-                        <span>{donation.foodTypeId}</span>
+                        <span>{donation.foodTypeName}</span>
                       </div>
                     </td>
                     <td className="px-4 py-4">
@@ -339,7 +336,7 @@ export function AvailableDonationsPage() {
                       </BaseBadge>
                     </td>
                     <td className="px-4 py-4">
-                      {donation.donorId}
+                      {donation.donorName}
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex flex-col">

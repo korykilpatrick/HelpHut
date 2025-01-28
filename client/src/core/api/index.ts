@@ -114,6 +114,41 @@ export interface DeliveryRecord {
   };
 }
 
+interface Donation {
+  id: string;
+  foodTypeId: string;
+  foodTypeName: string;
+  quantity: number;
+  unit: string;
+  pickupWindowStart: string;
+  pickupWindowEnd: string;
+  donorId: string;
+  donorName: string;
+  notes?: string;
+  requiresRefrigeration: boolean;
+  requiresFreezing: boolean;
+  isFragile: boolean;
+  requiresHeavyLifting: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ClaimTicketResponse {
+  ticket: {
+    id: string;
+    donationId: string;
+    status: string;
+    priority: string;
+    volunteerId?: string;
+    partnerOrgId?: string;
+    pickupLocationId?: string;
+    dropoffLocationId?: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  message: string;
+}
+
 export const api = {
   auth: {
     login: (email: string, password: string) => 
@@ -136,8 +171,23 @@ export const api = {
       axiosInstance.patch(`/donations/${id}`, data),
     deleteDonation: (id: string) =>
       axiosInstance.delete(`/donations/${id}`),
-    claimDonation: (id: string) =>
-      axiosInstance.post(`/donations/${id}/claim`),
+  },
+  partners: {
+    // List available donations
+    async listAvailableDonations(): Promise<Donation[]> {
+      const { data } = await axiosInstance.get('/partners/donations/available');
+      return data.donations;
+    },
+    // List claimed donations
+    async listClaimedDonations(): Promise<Donation[]> {
+      const { data } = await axiosInstance.get('/partners/donations/claimed');
+      return data.donations;
+    },
+    // Claim a donation
+    async claimDonation(id: string): Promise<ClaimTicketResponse> {
+      const { data } = await axiosInstance.post(`/partners/donations/${id}/claim`);
+      return data;
+    }
   },
   donors: {
     list: () => axiosInstance.get('/donors'),
