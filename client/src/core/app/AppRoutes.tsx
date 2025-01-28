@@ -10,13 +10,10 @@ import { DashboardPage as DonorDashboard } from '../../portals/donor/pages/Dashb
 import { DonationSubmissionPage } from '../../portals/donor/pages/DonationSubmissionPage';
 import { DonationListPage } from '../../portals/donor/pages/DonationListPage';
 import { AvailablePickupsPage } from '../../portals/volunteer/pages/AvailablePickupsPage';
-import { SchedulePage } from '../../portals/volunteer/pages/SchedulePage';
-import { DeliveryHistoryPage } from '../../portals/volunteer/pages/DeliveryHistoryPage';
-import { ImpactPage } from '../../portals/volunteer/pages/ImpactPage';
-import { CoverageAreasPage } from '../../portals/volunteer/pages/CoverageAreasPage';
-import { LeaderboardPage } from '../../portals/volunteer/pages/LeaderboardPage';
+import { Dashboard as VolunteerDashboard } from '../../portals/volunteer/pages/Dashboard';
+import { ActiveDeliveries } from '../../portals/volunteer/pages/ActiveDeliveries';
+import { DeliveryHistory } from '../../portals/volunteer/pages/DeliveryHistory';
 import { ProfilePage } from '../../portals/volunteer/pages/ProfilePage';
-import { DashboardPage as VolunteerDashboard } from '../../portals/volunteer/pages/DashboardPage';
 import { partnerPortalConfig } from '../../portals/partner/config';
 import { DashboardPage as PartnerDashboard } from '../../portals/partner/pages/DashboardPage';
 import { InventoryPage } from '../../portals/partner/pages/InventoryPage';
@@ -50,8 +47,8 @@ export function AppRoutes() {
       </Route>
 
       {/* Volunteer Portal */}
-      <Route 
-        path="/volunteer" 
+      <Route
+        path="/volunteer"
         element={
           <RouteGuard allowedRoles={['admin', 'volunteer']}>
             <PortalLayout config={volunteerPortalConfig}><Outlet /></PortalLayout>
@@ -60,19 +57,15 @@ export function AppRoutes() {
       >
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<VolunteerDashboard />} />
-        <Route path="profile" element={<ProfilePage />} />
         <Route path="pickups/available" element={<AvailablePickupsPage />} />
-        <Route path="deliveries/active" element={<SchedulePage />} />
-        <Route path="history" element={<DeliveryHistoryPage />} />
-        <Route path="impact" element={<ImpactPage />} />
-        <Route path="zones" element={<CoverageAreasPage />} />
-        <Route path="leaderboard" element={<LeaderboardPage />} />
-        <Route path="availability" element={<SchedulePage />} />
+        <Route path="deliveries" element={<ActiveDeliveries />} />
+        <Route path="history" element={<DeliveryHistory />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
 
       {/* Partner Portal */}
-      <Route 
-        path="/partner" 
+      <Route
+        path="/partner"
         element={
           <RouteGuard allowedRoles={['admin', 'partner']}>
             <PortalLayout config={partnerPortalConfig}><Outlet /></PortalLayout>
@@ -84,25 +77,9 @@ export function AppRoutes() {
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="requests" element={<RequestsPage />} />
         <Route path="schedule" element={<DeliverySchedulePage />} />
-        <Route path="impact" element={<Navigate to="/partner/dashboard" replace />} />
-        <Route path="donors" element={<Navigate to="/partner/dashboard" replace />} />
-        <Route path="requirements" element={<Navigate to="/partner/dashboard" replace />} />
-        <Route path="settings" element={<Navigate to="/partner/dashboard" replace />} />
       </Route>
 
-      {/* Admin Portal */}
-      {/* <Route 
-        path="/admin" 
-        element={
-          <RouteGuard allowedRoles={['admin']}>
-            <PortalLayout config={adminPortalConfig}><Outlet /></PortalLayout>
-          </RouteGuard>
-        }
-      >
-        <Route path="dashboard" element={<AdminDashboard />} />
-      </Route> */}
-
-      {/* Catch all redirect */}
+      {/* Catch all - redirect to home */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

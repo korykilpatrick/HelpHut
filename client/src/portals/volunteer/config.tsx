@@ -42,7 +42,7 @@ export const volunteerPortalConfig: PortalConfig = {
       title: 'My Deliveries',
       description: 'Track your current and upcoming deliveries',
       icon: Truck,
-      path: '/volunteer/deliveries/active'
+      path: '/volunteer/deliveries'
     },
     {
       id: 'delivery-history',

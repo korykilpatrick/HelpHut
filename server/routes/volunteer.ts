@@ -149,6 +149,8 @@ router.get('/tickets/active', requireAuth, async (req, res, next) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    console.log('Getting active tickets for user:', userId);
+
     // Get the volunteer record for this user
     const { data: volunteer, error: volunteerError } = await supabase
       .from('volunteers')
@@ -156,14 +158,23 @@ router.get('/tickets/active', requireAuth, async (req, res, next) => {
       .eq('user_id', userId)
       .single();
 
-    if (volunteerError) throw volunteerError;
+    if (volunteerError) {
+      console.error('Error getting volunteer record:', volunteerError);
+      throw volunteerError;
+    }
     if (!volunteer) {
+      console.log('No volunteer record found for user:', userId);
       return res.status(404).json({ error: 'Volunteer record not found' });
     }
 
+    console.log('Found volunteer record:', volunteer);
+
     const tickets = await api.tickets.listActiveTickets(volunteer.id);
+    console.log('Active tickets returned:', tickets);
+    
     res.json({ tickets });
   } catch (error) {
+    console.error('Error in /tickets/active:', error);
     next(error);
   }
 });

@@ -203,6 +203,8 @@ export class TicketsApiImpl extends BaseApiImpl {
 
   async listActiveTickets(volunteerId: string): Promise<Ticket[]> {
     try {
+      console.log('Fetching active tickets for volunteer:', volunteerId);
+      
       const { data, error } = await this.db
         .from('tickets')
         .select(`
@@ -219,7 +221,13 @@ export class TicketsApiImpl extends BaseApiImpl {
         .eq('volunteer_id', volunteerId)
         .in('status', ['Scheduled', 'InTransit']);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching active tickets:', error);
+        throw error;
+      }
+      
+      console.log('Active tickets found:', data);
+      
       if (!data) return [];
 
       return data.map(ticket => this.mapDbTicketToTicket(ticket));

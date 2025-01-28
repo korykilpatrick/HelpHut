@@ -7,7 +7,7 @@ const savedAuth = localStorage.getItem('auth');
 const initialToken = savedAuth ? JSON.parse(savedAuth).token : null;
 
 // Create axios instance with default config
-const axiosInstance = axios.create({
+export const axiosInstance = axios.create({
   baseURL: '/api/v1',
   headers: {
     'Content-Type': 'application/json',
