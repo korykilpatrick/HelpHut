@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import { api } from '../../lib/api/impl';
 import { validateRequest } from '../middleware/validate';
+import { requireAuth } from '../middleware/auth';
 import { z } from 'zod';
-import type { User } from '../../lib/db/types';
+import type { Database } from '../../lib/db/types';
+
+type User = Database['public']['Tables']['users']['Row'];
 
 const router = Router();
 
@@ -11,8 +14,27 @@ const statusUpdateSchema = z.object({
   status: z.enum(['in_transit', 'delivered'])
 });
 
+// List available pickups
+router.get('/pickups/available', requireAuth, async (req, res, next) => {
+  console.log('Route /pickups/available hit');
+  try {
+    if (!req.user) {
+      console.log('No user found in request');
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const volunteerId = (req.user as User).id;
+    console.log('Fetching available pickups for volunteer:', volunteerId);
+    const pickups = await api.donations.listAvailablePickups(volunteerId);
+    console.log('Pickups found:', pickups.length);
+    res.json({ pickups });
+  } catch (error) {
+    console.error('Error in /pickups/available:', error);
+    next(error);
+  }
+});
+
 // List available tickets
-router.get('/tickets/available', async (req, res, next) => {
+router.get('/tickets/available', requireAuth, async (req, res, next) => {
   try {
     const volunteerId = (req.user as User).id;
     const tickets = await api.tickets.listAvailableTickets(volunteerId);
@@ -23,7 +45,7 @@ router.get('/tickets/available', async (req, res, next) => {
 });
 
 // Claim a ticket
-router.post('/tickets/:id/claim', async (req, res, next) => {
+router.post('/tickets/:id/claim', requireAuth, async (req, res, next) => {
   try {
     const volunteerId = (req.user as User).id;
     const ticketId = req.params.id;
@@ -37,6 +59,7 @@ router.post('/tickets/:id/claim', async (req, res, next) => {
 // Update ticket status
 router.post(
   '/tickets/:id/status',
+  requireAuth,
   validateRequest({ body: statusUpdateSchema }),
   async (req, res, next) => {
     try {
@@ -52,7 +75,7 @@ router.post(
 );
 
 // List active tickets
-router.get('/tickets/active', async (req, res, next) => {
+router.get('/tickets/active', requireAuth, async (req, res, next) => {
   try {
     const volunteerId = (req.user as User).id;
     const tickets = await api.tickets.listActiveTickets(volunteerId);
@@ -63,7 +86,7 @@ router.get('/tickets/active', async (req, res, next) => {
 });
 
 // Get ticket history
-router.get('/tickets/history', async (req, res, next) => {
+router.get('/tickets/history', requireAuth, async (req, res, next) => {
   try {
     const volunteerId = (req.user as User).id;
     const history = await api.tickets.getTicketHistory(volunteerId);

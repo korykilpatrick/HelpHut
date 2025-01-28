@@ -357,33 +357,25 @@ export class DonationsApiImpl extends BaseApiImpl {
 
   async listAvailablePickups(volunteerId: string): Promise<AvailablePickup[]> {
     try {
-      type DonationWithDetails = {
-        id: string;
-        food_type_id: string | null;
-        quantity: number;
-        unit: string;
-        pickup_window_start: string;
-        pickup_window_end: string;
-        requires_refrigeration: boolean;
-        requires_freezing: boolean;
-        requires_heavy_lifting: boolean;
-        urgency: string;
-        donors: { 
-          organization_name: string; 
-          location_id: string | null 
-        };
-        tickets: {
-          id: string;
-          status: string;
-          partner_org_id: string | null;
-          dropoff_location_id: string | null;
-          partners?: {
-            name: string;
-            location_id: string | null;
-          } | null;
-        }[];
-      };
+      console.log('Fetching available pickups for volunteer:', volunteerId);
 
+      // First, let's check if we have any donations at all
+      const { data: allDonations, error: countError } = await this.db
+        .from('donations')
+        .select('id');
+      
+      console.log('Total donations in system:', allDonations?.length);
+
+      // Now let's check tickets separately
+      const { data: allTickets, error: ticketError } = await this.db
+        .from('tickets')
+        .select('id, status, volunteer_id');
+      
+      console.log('Total tickets in system:', allTickets?.length);
+      console.log('Submitted tickets without volunteer:', 
+        allTickets?.filter(t => t.status === 'Submitted' && !t.volunteer_id).length);
+
+      // Now our main query, but with left joins instead of inner joins
       const { data, error } = await this.db
         .from('donations')
         .select(`
@@ -397,11 +389,11 @@ export class DonationsApiImpl extends BaseApiImpl {
           requires_freezing,
           requires_heavy_lifting,
           urgency,
-          donors:donor_id!inner (
+          donors:donor_id (
             organization_name,
             location_id
           ),
-          tickets!inner (
+          tickets (
             id,
             status,
             partner_org_id,
@@ -412,21 +404,31 @@ export class DonationsApiImpl extends BaseApiImpl {
             )
           )
         `)
-        .eq('tickets.status', 'Submitted')  // Only tickets in Submitted status
-        .is('tickets.volunteer_id', null)   // No volunteer assigned
+        .eq('tickets.status', 'Submitted')
+        .is('tickets.volunteer_id', null)
         .returns<DonationWithDetails[]>();
+
+      console.log('Query error:', error);
+      console.log('Returned data:', data);
 
       if (error) throw error;
       if (!data) return [];
 
-      // Map the data to our AvailablePickup interface
-      return data.map(d => {
-        const ticket = d.tickets[0]; // Get the first ticket since we're querying by status
+      // Filter out any donations without valid tickets
+      const validPickups = data.filter(d => 
+        d.tickets && 
+        d.tickets.length > 0 && 
+        d.donors // Make sure we have donor info
+      );
+
+      console.log('Valid pickups after filtering:', validPickups.length);
+
+      return validPickups.map(d => {
+        const ticket = d.tickets[0];
         return {
           id: d.id,
           donorName: d.donors.organization_name,
           pickupLocation: 'TODO: Get from donor location_id',
-          // If there's a partner assigned, use their name, otherwise mark as unassigned
           deliveryLocation: ticket?.partners?.name || 'Awaiting Partner Assignment',
           pickupWindow: {
             start: d.pickup_window_start,
@@ -434,7 +436,7 @@ export class DonationsApiImpl extends BaseApiImpl {
           },
           foodType: d.food_type_id ?? '',
           quantity: `${d.quantity} ${d.unit}`,
-          distance: Math.random() * 10, // Mock distance - TODO: Calculate from volunteer location
+          distance: Math.random() * 10,
           urgency: d.urgency as 'low' | 'medium' | 'high' ?? 'low',
           requirements: {
             refrigeration: d.requires_refrigeration,

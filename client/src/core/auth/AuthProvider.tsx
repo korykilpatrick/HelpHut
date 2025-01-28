@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import type { AuthUser, AuthState, UserRole } from './types';
-import axios from 'axios';
+import { api, setAuthToken } from '../api';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
@@ -67,11 +67,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (savedAuth) {
           const { token } = JSON.parse(savedAuth);
-          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          // Set token in axios instance
+          setAuthToken(token);
           
           console.log('-> Checking session');
-          const response = await axios.get('/api/v1/auth/session');
-          const { user } = response.data;
+          const { data } = await api.auth.getSession();
+          const { user } = data;
           
           console.log('-> Session valid, user:', user);
           
@@ -92,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.log('-> Auth check failed:', error);
         localStorage.removeItem('auth');
-        delete axios.defaults.headers.common['Authorization'];
+        setAuthToken(null);
         setAuthState({ user: null, isLoading: false });
       } finally {
         console.log('-> Auth check complete');
@@ -145,14 +146,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
     try {
-      const response = await axios.post('/api/v1/auth/login', { email, password });
-      const { user, session } = response.data;
+      const { data } = await api.auth.login(email, password);
+      const { user, session } = data;
       
-      console.log('Login response:', response.data);
+      console.log('Login response:', data);
       
       // Store the session token
       localStorage.setItem('auth', JSON.stringify({ token: session.token }));
-      axios.defaults.headers.common['Authorization'] = `Bearer ${session.token}`;
+      setAuthToken(session.token);
       
       const authUser: AuthUser = {
         id: user.id,
@@ -176,8 +177,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
     try {
-      await axios.post('/api/v1/auth/logout');
-      delete axios.defaults.headers.common['Authorization'];
+      await api.auth.logout();
+      setAuthToken(null);
       localStorage.removeItem('auth');
       setAuthState({ user: null, isLoading: false });
       navigate('/login', { replace: true });

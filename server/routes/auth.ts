@@ -156,7 +156,9 @@ router.post('/login', async (req, res) => {
         ...userData,
         organization: orgData
       },
-      session: data.session
+      session: {
+        token: data.session.access_token
+      }
     });
   } catch (error: any) {
     console.error('Login error:', error);

@@ -2,13 +2,27 @@ import axios from 'axios';
 import type { SignupData } from '@/portals/auth/types';
 import { toCamelCase, toSnakeCase } from '../../../../lib/utils/case-transform';
 
+// Get initial token from localStorage
+const savedAuth = localStorage.getItem('auth');
+const initialToken = savedAuth ? JSON.parse(savedAuth).token : null;
+
 // Create axios instance with default config
 const axiosInstance = axios.create({
   baseURL: '/api/v1',
   headers: {
     'Content-Type': 'application/json',
+    ...(initialToken && { Authorization: `Bearer ${initialToken}` })
   },
 });
+
+// Function to update the token
+export const setAuthToken = (token: string | null) => {
+  if (token) {
+    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete axiosInstance.defaults.headers.common['Authorization'];
+  }
+};
 
 // Add request interceptor for case transformation
 axiosInstance.interceptors.request.use(
@@ -35,6 +49,7 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 401) {
       // Clear auth state on unauthorized
       localStorage.removeItem('auth');
+      setAuthToken(null);
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -131,33 +146,33 @@ export const api = {
   },
   volunteer: {
     // List available tickets
-    async listAvailableTickets(): Promise<Ticket[]> {
-      const { data } = await axiosInstance.get('/volunteer/tickets/available');
-      return data.tickets;
+    async listAvailablePickups(): Promise<Ticket[]> {
+      const { data } = await axiosInstance.get('/volunteer/pickups/available');
+      return data.pickups;
     },
 
     // Claim a ticket
-    async claimTicket(ticketId: string): Promise<void> {
-      await axiosInstance.post(`/volunteer/tickets/${ticketId}/claim`);
+    async claimPickup(pickupId: string): Promise<void> {
+      await axiosInstance.post(`/volunteer/pickups/${pickupId}/claim`);
     },
 
     // Update ticket status
-    async updateTicketStatus(
-      ticketId: string,
+    async updatePickupStatus(
+      pickupId: string,
       status: 'in_transit' | 'delivered'
     ): Promise<void> {
-      await axiosInstance.post(`/volunteer/tickets/${ticketId}/status`, { status });
+      await axiosInstance.post(`/volunteer/pickups/${pickupId}/status`, { status });
     },
 
     // List active tickets
-    async listActiveTickets(): Promise<Ticket[]> {
-      const { data } = await axiosInstance.get('/volunteer/tickets/active');
-      return data.tickets;
+    async listActivePickups(): Promise<Ticket[]> {
+      const { data } = await axiosInstance.get('/volunteer/pickups/active');
+      return data.pickups;
     },
 
     // Get ticket history
-    async getTicketHistory(): Promise<Ticket[]> {
-      const { data } = await axiosInstance.get('/volunteer/tickets/history');
+    async getPickupHistory(): Promise<Ticket[]> {
+      const { data } = await axiosInstance.get('/volunteer/pickups/history');
       return data.history;
     }
   }
