@@ -357,7 +357,7 @@ export class DonationsApiImpl extends BaseApiImpl {
 
   async listAvailablePickups(volunteerId: string): Promise<AvailablePickup[]> {
     try {
-      type DonationWithDonor = {
+      type DonationWithDetails = {
         id: string;
         food_type_id: string | null;
         quantity: number;
@@ -368,7 +368,20 @@ export class DonationsApiImpl extends BaseApiImpl {
         requires_freezing: boolean;
         requires_heavy_lifting: boolean;
         urgency: string;
-        donors: { organization_name: string; location_id: string | null };
+        donors: { 
+          organization_name: string; 
+          location_id: string | null 
+        };
+        tickets: {
+          id: string;
+          status: string;
+          partner_org_id: string | null;
+          dropoff_location_id: string | null;
+          partners?: {
+            name: string;
+            location_id: string | null;
+          } | null;
+        }[];
       };
 
       const { data, error } = await this.db
@@ -387,35 +400,49 @@ export class DonationsApiImpl extends BaseApiImpl {
           donors:donor_id!inner (
             organization_name,
             location_id
+          ),
+          tickets!inner (
+            id,
+            status,
+            partner_org_id,
+            dropoff_location_id,
+            partners:partner_org_id (
+              name,
+              location_id
+            )
           )
         `)
-        .eq('status', 'submitted')
-        .is('volunteer_id', null)
-        .returns<DonationWithDonor[]>();
+        .eq('tickets.status', 'Submitted')  // Only tickets in Submitted status
+        .is('tickets.volunteer_id', null)   // No volunteer assigned
+        .returns<DonationWithDetails[]>();
 
       if (error) throw error;
       if (!data) return [];
 
-      // TODO: Calculate distances using volunteer's location
-      return data.map(d => ({
-        id: d.id,
-        donorName: d.donors.organization_name,
-        pickupLocation: 'TODO: Get from location_id',
-        deliveryLocation: 'TODO: Get from location_id',
-        pickupWindow: {
-          start: d.pickup_window_start,
-          end: d.pickup_window_end
-        },
-        foodType: d.food_type_id ?? '',
-        quantity: `${d.quantity} ${d.unit}`,
-        distance: Math.random() * 10, // Mock distance
-        urgency: d.urgency as 'low' | 'medium' | 'high' ?? 'low',
-        requirements: {
-          refrigeration: d.requires_refrigeration,
-          freezing: d.requires_freezing,
-          heavyLifting: d.requires_heavy_lifting
-        }
-      }));
+      // Map the data to our AvailablePickup interface
+      return data.map(d => {
+        const ticket = d.tickets[0]; // Get the first ticket since we're querying by status
+        return {
+          id: d.id,
+          donorName: d.donors.organization_name,
+          pickupLocation: 'TODO: Get from donor location_id',
+          // If there's a partner assigned, use their name, otherwise mark as unassigned
+          deliveryLocation: ticket?.partners?.name || 'Awaiting Partner Assignment',
+          pickupWindow: {
+            start: d.pickup_window_start,
+            end: d.pickup_window_end
+          },
+          foodType: d.food_type_id ?? '',
+          quantity: `${d.quantity} ${d.unit}`,
+          distance: Math.random() * 10, // Mock distance - TODO: Calculate from volunteer location
+          urgency: d.urgency as 'low' | 'medium' | 'high' ?? 'low',
+          requirements: {
+            refrigeration: d.requires_refrigeration,
+            freezing: d.requires_freezing,
+            heavyLifting: d.requires_heavy_lifting
+          }
+        };
+      });
     } catch (error) {
       console.error('Error in listAvailablePickups:', error);
       throw error;
