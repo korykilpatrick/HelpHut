@@ -15,15 +15,113 @@ import BaseBadge from '../../../shared/components/base/BaseBadge';
 import BaseInput from '../../../shared/components/base/BaseInput';
 import { BaseButton } from '../../../shared/components/base/BaseButton';
 
-function formatDate(dateString: string | Date) {
-  return new Date(dateString).toLocaleString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
+interface Donation {
+  id: string;
+  donorId: string;
+  donorName: string;
+  foodTypeId: string;
+  foodTypeName: string;
+  quantity: number;
+  unit: string;
+  pickupWindowStart: string;
+  pickupWindowEnd: string;
+  notes?: string;
+  ticket: {
+    id: string;
+    status: string;
+    volunteerId?: string;
+    volunteerName?: string;
+  };
+}
+
+// Type guard for Date objects
+function isDate(value: any): value is Date {
+  return typeof value === 'object' && value !== null && value.constructor === Date;
+}
+
+function formatPickupWindow(start: string | null, end: string | null) {
+  console.log('📅 [formatPickupWindow] Input:', {
+    start: {
+      value: start,
+      type: typeof start
+    },
+    end: {
+      value: end,
+      type: typeof end
+    }
   });
+  
+  try {
+    // Handle empty or invalid inputs
+    if (!start || !end) {
+      console.log('❌ [formatPickupWindow] Empty input:', { start, end });
+      return 'Pickup window not set';
+    }
+
+    // Parse the ISO date strings
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    
+    console.log('📅 [formatPickupWindow] Parsed dates:', {
+      startDate: {
+        value: startDate,
+        isValid: !isNaN(startDate.getTime()),
+        timestamp: startDate.getTime(),
+        toString: startDate.toString(),
+        toISOString: startDate.toISOString()
+      },
+      endDate: {
+        value: endDate,
+        isValid: !isNaN(endDate.getTime()),
+        timestamp: endDate.getTime(),
+        toString: endDate.toString(),
+        toISOString: endDate.toISOString()
+      }
+    });
+    
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      console.error('❌ [formatPickupWindow] Invalid date detected:', {
+        start: {
+          input: start,
+          parsed: startDate,
+          timestamp: startDate.getTime(),
+          isValid: !isNaN(startDate.getTime())
+        },
+        end: {
+          input: end,
+          parsed: endDate,
+          timestamp: endDate.getTime(),
+          isValid: !isNaN(endDate.getTime())
+        }
+      });
+      return 'Invalid date format';
+    }
+    
+    const formatDateTime = (date: Date) => {
+      const formatted = date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+      console.log('📅 [formatPickupWindow] Formatted datetime:', { 
+        input: date.toString(),
+        formatted,
+        timestamp: date.getTime(),
+        iso: date.toISOString()
+      });
+      return formatted;
+    };
+
+    const result = `${formatDateTime(startDate)} - ${formatDateTime(endDate)}`;
+    console.log('✨ [formatPickupWindow] Final formatted result:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ [formatPickupWindow] Error:', error, { start, end });
+    return 'Error formatting dates';
+  }
 }
 
 function getStatusColor(status: string) {
@@ -52,13 +150,33 @@ export function ClaimedDonationsPage() {
   const { data: donationsData, isLoading, error } = useQuery({
     queryKey: ['claimedDonations'],
     queryFn: async () => {
-      console.log('📡 Fetching claimed donations...');
+      console.log('📡 [ClaimedDonationsPage] Fetching claimed donations...');
       try {
         const donations = await api.partners.listClaimedDonations();
-        console.log('✅ Claimed donations:', donations);
+        console.log('🔍 [ClaimedDonationsPage] Raw API response:', {
+          type: typeof donations,
+          isArray: Array.isArray(donations),
+          length: donations.length,
+          firstItem: donations[0]
+        });
+        
+        console.log('🔄 [ClaimedDonationsPage] Donation dates from API:', donations.map(d => ({
+          id: d.id,
+          pickupWindowStart: {
+            value: d.pickupWindowStart,
+            type: typeof d.pickupWindowStart,
+            constructor: d.pickupWindowStart?.constructor?.name
+          },
+          pickupWindowEnd: {
+            value: d.pickupWindowEnd,
+            type: typeof d.pickupWindowEnd,
+            constructor: d.pickupWindowEnd?.constructor?.name
+          }
+        })));
+
         return { donations };
       } catch (err) {
-        console.error('❌ Error fetching claimed donations:', err);
+        console.error('❌ [ClaimedDonationsPage] Error fetching donations:', err);
         throw err;
       }
     }
@@ -238,10 +356,7 @@ export function ClaimedDonationsPage() {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex flex-col">
-                        <span>Start: {formatDate(donation.pickupWindowStart)}</span>
-                        <span className="text-sm text-muted-foreground">
-                          End: {formatDate(donation.pickupWindowEnd)}
-                        </span>
+                        {formatPickupWindow(donation.pickupWindowStart, donation.pickupWindowEnd)}
                       </div>
                     </td>
                     <td className="px-4 py-4">

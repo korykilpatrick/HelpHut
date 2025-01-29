@@ -1,6 +1,9 @@
 import { BaseApiImpl } from './base';
 import type { Database } from '../../db/types';
 import { DonationNotFoundError, DonationConflictError } from './donations';
+import { withCaseTransform } from '../../utils/case-transform';
+import { toCamelCase } from '../../utils/case-transform';
+import type { Donation as ApiDonation } from '../../api/generated/src/models/Donation';
 
 type Partner = Database['public']['Tables']['partners']['Row'];
 type PartnerCreate = Database['public']['Tables']['partners']['Insert'];
@@ -152,6 +155,8 @@ export class PartnersApiImpl extends BaseApiImpl {
 
   async listAvailableDonations(params: { limit?: number; offset?: number }): Promise<Donation[]> {
     try {
+      console.log('🔍 [PartnersApiImpl.listAvailableDonations] Starting query with params:', params);
+      
       // Get donations that have no partner_org_id (unclaimed by partners)
       const { data, error } = await this.db
         .from('donations')
@@ -169,37 +174,83 @@ export class PartnersApiImpl extends BaseApiImpl {
       if (error) throw error;
       if (!data) return [];
 
-      return (data as DbDonation[]).map(row => ({
-        id: row.id,
-        foodTypeId: row.food_type_id || '',
-        foodTypeName: row.food_type?.name || '',
-        donorId: row.donor_id || '',
-        donorName: row.donor?.organization_name || '',
-        quantity: row.quantity,
-        unit: row.unit,
-        pickupWindowStart: new Date(row.pickup_window_start),
-        pickupWindowEnd: new Date(row.pickup_window_end),
-        createdAt: new Date(row.created_at),
-        updatedAt: new Date(row.updated_at),
-        requiresRefrigeration: row.requires_refrigeration,
-        requiresFreezing: row.requires_freezing,
-        isFragile: row.is_fragile,
-        requiresHeavyLifting: row.requires_heavy_lifting,
-        notes: row.notes || undefined,
-        ticket: {
-          id: row.tickets[0]?.id || '',
-          status: row.tickets[0]?.status || '',
-          volunteerId: row.tickets[0]?.volunteer_id || undefined,
-          volunteerName: row.tickets[0]?.volunteer?.user?.name || undefined
-        }
-      }));
+      console.log('✅ [PartnersApiImpl.listAvailableDonations] Raw database response:', 
+        data.map(d => ({
+          id: d.id,
+          pickup_window_start: d.pickup_window_start,
+          pickup_window_end: d.pickup_window_end,
+          pickup_window_start_type: typeof d.pickup_window_start,
+          pickup_window_end_type: typeof d.pickup_window_end
+        }))
+      );
+
+      const mappedDonations = (data as DbDonation[]).map(row => {
+        console.log('🔄 [PartnersApiImpl.listAvailableDonations] Processing donation:', {
+          id: row.id,
+          raw_start: row.pickup_window_start,
+          raw_end: row.pickup_window_end,
+          raw_start_type: typeof row.pickup_window_start,
+          raw_end_type: typeof row.pickup_window_end
+        });
+
+        const pickupWindowStart = new Date(row.pickup_window_start);
+        const pickupWindowEnd = new Date(row.pickup_window_end);
+
+        console.log('📅 [PartnersApiImpl.listAvailableDonations] Converted dates:', {
+          id: row.id,
+          pickupWindowStart,
+          pickupWindowEnd,
+          startValid: !isNaN(pickupWindowStart.getTime()),
+          endValid: !isNaN(pickupWindowEnd.getTime()),
+          startTimestamp: pickupWindowStart.getTime(),
+          endTimestamp: pickupWindowEnd.getTime()
+        });
+
+        return {
+          id: row.id,
+          foodTypeId: row.food_type_id || '',
+          foodTypeName: row.food_type?.name || '',
+          donorId: row.donor_id || '',
+          donorName: row.donor?.organization_name || '',
+          quantity: row.quantity,
+          unit: row.unit,
+          pickupWindowStart,
+          pickupWindowEnd,
+          createdAt: new Date(row.created_at),
+          updatedAt: new Date(row.updated_at),
+          requiresRefrigeration: row.requires_refrigeration,
+          requiresFreezing: row.requires_freezing,
+          isFragile: row.is_fragile,
+          requiresHeavyLifting: row.requires_heavy_lifting,
+          notes: row.notes || undefined,
+          ticket: {
+            id: row.tickets[0]?.id || '',
+            status: row.tickets[0]?.status || '',
+            volunteerId: row.tickets[0]?.volunteer_id || undefined,
+            volunteerName: row.tickets[0]?.volunteer?.user?.display_name || undefined
+          }
+        };
+      });
+
+      console.log('✨ [PartnersApiImpl.listAvailableDonations] Final mapped donations:', 
+        mappedDonations.map(d => ({
+          id: d.id,
+          pickupWindowStart: d.pickupWindowStart.toISOString(),
+          pickupWindowEnd: d.pickupWindowEnd.toISOString()
+        }))
+      );
+
+      return mappedDonations;
     } catch (error) {
+      console.error('❌ [PartnersApiImpl.listAvailableDonations] Error:', error);
       return this.handleError(error);
     }
   }
 
-  async listClaimedDonations(params: { limit?: number; offset?: number }): Promise<Donation[]> {
+  async listClaimedDonations(params: { limit?: number; offset?: number }): Promise<ApiDonation[]> {
     try {
+      console.log('🔍 [PartnersApiImpl.listClaimedDonations] Starting query with params:', params);
+      
       if (!this.context?.user?.id) {
         throw new Error('User ID not found in context');
       }
@@ -213,6 +264,8 @@ export class PartnersApiImpl extends BaseApiImpl {
 
       if (partnerError) throw partnerError;
       if (!partner) throw new Error('Partner not found for user');
+
+      console.log('👤 [PartnersApiImpl.listClaimedDonations] Found partner:', partner);
 
       // Get donations that have tickets claimed by this partner
       const { data, error } = await this.db
@@ -240,31 +293,64 @@ export class PartnersApiImpl extends BaseApiImpl {
       if (error) throw error;
       if (!data) return [];
 
-      return (data as DbDonation[]).map(row => ({
-        id: row.id,
-        foodTypeId: row.food_type_id || '',
-        foodTypeName: row.food_type?.name || '',
-        donorId: row.donor_id || '',
-        donorName: row.donor?.organization_name || '',
-        quantity: row.quantity,
-        unit: row.unit,
-        pickupWindowStart: new Date(row.pickup_window_start),
-        pickupWindowEnd: new Date(row.pickup_window_end),
-        createdAt: new Date(row.created_at),
-        updatedAt: new Date(row.updated_at),
-        requiresRefrigeration: row.requires_refrigeration,
-        requiresFreezing: row.requires_freezing,
-        isFragile: row.is_fragile,
-        requiresHeavyLifting: row.requires_heavy_lifting,
-        notes: row.notes || undefined,
-        ticket: {
-          id: row.tickets[0]?.id || '',
-          status: row.tickets[0]?.status || '',
-          volunteerId: row.tickets[0]?.volunteer_id || undefined,
-          volunteerName: row.tickets[0]?.volunteer?.user?.display_name || undefined
-        }
-      }));
+      console.log('✅ [PartnersApiImpl.listClaimedDonations] Raw database response:', 
+        data.map(d => ({
+          id: d.id,
+          pickup_window_start: d.pickup_window_start,
+          pickup_window_end: d.pickup_window_end,
+          pickup_window_start_type: typeof d.pickup_window_start,
+          pickup_window_end_type: typeof d.pickup_window_end
+        }))
+      );
+
+      const mappedDonations = (data as DbDonation[]).map(row => {
+        console.log('🔄 [PartnersApiImpl.listClaimedDonations] Processing donation:', {
+          id: row.id,
+          raw_start: row.pickup_window_start,
+          raw_end: row.pickup_window_end,
+          raw_start_type: typeof row.pickup_window_start,
+          raw_end_type: typeof row.pickup_window_end
+        });
+
+        const donation = toCamelCase({
+          id: row.id,
+          food_type_id: row.food_type_id || '',
+          food_type_name: row.food_type?.name || '',
+          donor_id: row.donor_id || '',
+          donor_name: row.donor?.organization_name || '',
+          quantity: row.quantity,
+          unit: row.unit,
+          pickup_window_start: row.pickup_window_start,
+          pickup_window_end: row.pickup_window_end,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+          requires_refrigeration: row.requires_refrigeration,
+          requires_freezing: row.requires_freezing,
+          is_fragile: row.is_fragile,
+          requires_heavy_lifting: row.requires_heavy_lifting,
+          notes: row.notes || undefined,
+          ticket: {
+            id: row.tickets[0]?.id || '',
+            status: row.tickets[0]?.status || '',
+            volunteer_id: row.tickets[0]?.volunteer_id || undefined,
+            volunteer_name: row.tickets[0]?.volunteer?.user?.display_name || undefined
+          }
+        }) as ApiDonation;
+
+        return donation;
+      });
+
+      console.log('✨ [PartnersApiImpl.listClaimedDonations] Final mapped donations:', 
+        mappedDonations.map(d => ({
+          id: d.id,
+          pickupWindowStart: d.pickupWindowStart,
+          pickupWindowEnd: d.pickupWindowEnd
+        }))
+      );
+
+      return mappedDonations;
     } catch (error) {
+      console.error('❌ [PartnersApiImpl.listClaimedDonations] Error:', error);
       return this.handleError(error);
     }
   }

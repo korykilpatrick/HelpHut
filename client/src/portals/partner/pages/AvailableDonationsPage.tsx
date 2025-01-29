@@ -57,13 +57,80 @@ function getUrgencyColor(urgency: 'low' | 'medium' | 'high'): 'success' | 'warni
   }
 }
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit'
-  });
+function formatPickupWindow(start: string | null, end: string | null) {
+  console.log('📅 [formatPickupWindow] Input:', { start, end });
+  
+  try {
+    // Handle empty or invalid inputs
+    if (!start || !end) {
+      console.log('❌ [formatPickupWindow] Empty input:', { start, end });
+      return 'Pickup window not set';
+    }
+
+    // Parse the ISO date strings
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    
+    console.log('📅 [formatPickupWindow] Parsed dates:', {
+      startDate: {
+        value: startDate,
+        isValid: !isNaN(startDate.getTime()),
+        timestamp: startDate.getTime(),
+        toString: startDate.toString(),
+        toISOString: startDate.toISOString()
+      },
+      endDate: {
+        value: endDate,
+        isValid: !isNaN(endDate.getTime()),
+        timestamp: endDate.getTime(),
+        toString: endDate.toString(),
+        toISOString: endDate.toISOString()
+      }
+    });
+    
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      console.error('❌ [formatPickupWindow] Invalid date detected:', {
+        start: {
+          input: start,
+          parsed: startDate,
+          timestamp: startDate.getTime(),
+          isValid: !isNaN(startDate.getTime())
+        },
+        end: {
+          input: end,
+          parsed: endDate,
+          timestamp: endDate.getTime(),
+          isValid: !isNaN(endDate.getTime())
+        }
+      });
+      return 'Invalid date format';
+    }
+    
+    const formatDateTime = (date: Date) => {
+      const formatted = date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+      console.log('📅 [formatPickupWindow] Formatted datetime:', { 
+        input: date.toString(),
+        formatted,
+        timestamp: date.getTime(),
+        iso: date.toISOString()
+      });
+      return formatted;
+    };
+
+    const result = `${formatDateTime(startDate)} - ${formatDateTime(endDate)}`;
+    console.log('✨ [formatPickupWindow] Final formatted result:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ [formatPickupWindow] Error:', error, { start, end });
+    return 'Error formatting dates';
+  }
 }
 
 export function AvailableDonationsPage() {
@@ -78,40 +145,74 @@ export function AvailableDonationsPage() {
   const { data: donationsData, isLoading, error } = useQuery({
     queryKey: ['availableDonations'],
     queryFn: async () => {
-      console.log('📡 Fetching available donations...');
+      console.log('📡 [AvailableDonationsPage] Fetching available donations...');
       try {
         const donations = await api.partners.listAvailableDonations();
-        console.log('✅ Raw API response:', donations);
+        console.log('🔍 [AvailableDonationsPage] Raw API response:', {
+          type: typeof donations,
+          isArray: Array.isArray(donations),
+          length: donations.length,
+          firstItem: donations[0]
+        });
         
-        if (!Array.isArray(donations)) {
-          console.error('❌ Donations is not an array:', donations);
-          throw new Error('Invalid donations data structure');
-        }
+        console.log('🔄 [AvailableDonationsPage] Donation dates from API:', donations.map(d => ({
+          id: d.id,
+          pickupWindowStart: {
+            value: d.pickupWindowStart,
+            type: typeof d.pickupWindowStart,
+            constructor: d.pickupWindowStart?.constructor?.name
+          },
+          pickupWindowEnd: {
+            value: d.pickupWindowEnd,
+            type: typeof d.pickupWindowEnd,
+            constructor: d.pickupWindowEnd?.constructor?.name
+          }
+        })));
 
         const mappedDonations = donations.map((donation: Donation) => {
-          const urgency = getUrgencyFromDates(
-            new Date(donation.pickupWindowStart), 
-            new Date(donation.pickupWindowEnd)
-          );
-          console.log(`🏷️ Mapped donation ${donation.id}:`, {
-            foodType: donation.foodTypeId,
-            quantity: donation.quantity,
-            urgency,
-            pickupWindow: {
-              start: donation.pickupWindowStart,
-              end: donation.pickupWindowEnd
+          console.log('🔍 Processing single donation:', {
+            id: donation.id,
+            dates: {
+              pickupWindowStart: donation.pickupWindowStart,
+              pickupWindowEnd: donation.pickupWindowEnd,
+              startType: typeof donation.pickupWindowStart,
+              endType: typeof donation.pickupWindowEnd,
+              startKeys: typeof donation.pickupWindowStart === 'object' ? Object.keys(donation.pickupWindowStart) : [],
+              endKeys: typeof donation.pickupWindowEnd === 'object' ? Object.keys(donation.pickupWindowEnd) : []
             }
           });
+
+          // Add debug check for empty object
+          const isEmptyObject = (obj: any) => {
+            console.log('🔍 Checking if empty object:', {
+              value: obj,
+              type: typeof obj,
+              keys: typeof obj === 'object' && obj !== null ? Object.keys(obj) : [],
+              prototype: typeof obj === 'object' && obj !== null ? Object.getPrototypeOf(obj) : null
+            });
+            return typeof obj === 'object' && obj !== null && Object.keys(obj).length === 0;
+          };
+
+          console.log('🔍 Empty object check:', {
+            startIsEmpty: isEmptyObject(donation.pickupWindowStart),
+            endIsEmpty: isEmptyObject(donation.pickupWindowEnd)
+          });
+
+          const urgency = getUrgencyFromDates(
+            new Date(donation.pickupWindowStart as string), 
+            new Date(donation.pickupWindowEnd as string)
+          );
+          
           return {
             ...donation,
             urgency
           };
         }) as DonationWithUrgency[];
 
-        console.log('✨ Processed donations:', mappedDonations);
+        console.log('✨ Final mapped donations:', mappedDonations);
         return { donations: mappedDonations };
       } catch (err) {
-        console.error('❌ Error fetching donations:', err);
+        console.error('❌ [AvailableDonationsPage] Error fetching donations:', err);
         throw err;
       }
     }
@@ -340,10 +441,7 @@ export function AvailableDonationsPage() {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex flex-col">
-                        <span>Start: {formatDate(donation.pickupWindowStart)}</span>
-                        <span className="text-sm text-muted-foreground">
-                          End: {formatDate(donation.pickupWindowEnd)}
-                        </span>
+                        {formatPickupWindow(donation.pickupWindowStart, donation.pickupWindowEnd)}
                       </div>
                     </td>
                     <td className="px-4 py-4 text-right">

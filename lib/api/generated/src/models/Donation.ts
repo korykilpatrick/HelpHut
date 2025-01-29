@@ -51,10 +51,10 @@ export interface Donation {
     unit: string;
     /**
      * 
-     * @type {Date}
+     * @type {string}
      * @memberof Donation
      */
-    expirationDate?: Date;
+    expirationDate?: string;
     /**
      * 
      * @type {string}
@@ -93,34 +93,34 @@ export interface Donation {
     notes?: string;
     /**
      * 
-     * @type {Date}
+     * @type {string}
      * @memberof Donation
      */
-    pickupWindowStart: Date;
+    pickupWindowStart: string;
     /**
      * 
-     * @type {Date}
+     * @type {string}
      * @memberof Donation
      */
-    pickupWindowEnd: Date;
+    pickupWindowEnd: string;
     /**
      * 
-     * @type {Date}
+     * @type {string}
      * @memberof Donation
      */
-    donatedAt?: Date;
+    donatedAt?: string;
     /**
      * 
-     * @type {Date}
+     * @type {string}
      * @memberof Donation
      */
-    createdAt?: Date;
+    createdAt?: string;
     /**
      * 
-     * @type {Date}
+     * @type {string}
      * @memberof Donation
      */
-    updatedAt?: Date;
+    updatedAt?: string;
 }
 
 /**
@@ -152,18 +152,18 @@ export function DonationFromJSONTyped(json: any, ignoreDiscriminator: boolean): 
         'foodTypeId': json['food_type_id'],
         'quantity': json['quantity'],
         'unit': json['unit'],
-        'expirationDate': json['expiration_date'] == null ? undefined : (new Date(json['expiration_date'])),
+        'expirationDate': json['expiration_date'] == null ? undefined : json['expiration_date'],
         'storageRequirements': json['storage_requirements'] == null ? undefined : json['storage_requirements'],
         'requiresRefrigeration': json['requires_refrigeration'] == null ? undefined : json['requires_refrigeration'],
         'requiresFreezing': json['requires_freezing'] == null ? undefined : json['requires_freezing'],
         'isFragile': json['is_fragile'] == null ? undefined : json['is_fragile'],
         'requiresHeavyLifting': json['requires_heavy_lifting'] == null ? undefined : json['requires_heavy_lifting'],
         'notes': json['notes'] == null ? undefined : json['notes'],
-        'pickupWindowStart': (new Date(json['pickup_window_start'])),
-        'pickupWindowEnd': (new Date(json['pickup_window_end'])),
-        'donatedAt': json['donated_at'] == null ? undefined : (new Date(json['donated_at'])),
-        'createdAt': json['created_at'] == null ? undefined : (new Date(json['created_at'])),
-        'updatedAt': json['updated_at'] == null ? undefined : (new Date(json['updated_at'])),
+        'pickupWindowStart': json['pickup_window_start'],
+        'pickupWindowEnd': json['pickup_window_end'],
+        'donatedAt': json['donated_at'] == null ? undefined : json['donated_at'],
+        'createdAt': json['created_at'] == null ? undefined : json['created_at'],
+        'updatedAt': json['updated_at'] == null ? undefined : json['updated_at'],
     };
 }
 
@@ -183,18 +183,18 @@ export function DonationToJSONTyped(value?: Donation | null, ignoreDiscriminator
         'food_type_id': value['foodTypeId'],
         'quantity': value['quantity'],
         'unit': value['unit'],
-        'expiration_date': value['expirationDate'] == null ? undefined : ((value['expirationDate']).toISOString()),
+        'expiration_date': value['expirationDate'],
         'storage_requirements': value['storageRequirements'],
         'requires_refrigeration': value['requiresRefrigeration'],
         'requires_freezing': value['requiresFreezing'],
         'is_fragile': value['isFragile'],
         'requires_heavy_lifting': value['requiresHeavyLifting'],
         'notes': value['notes'],
-        'pickup_window_start': ((value['pickupWindowStart']).toISOString()),
-        'pickup_window_end': ((value['pickupWindowEnd']).toISOString()),
-        'donated_at': value['donatedAt'] == null ? undefined : ((value['donatedAt']).toISOString()),
-        'created_at': value['createdAt'] == null ? undefined : ((value['createdAt']).toISOString()),
-        'updated_at': value['updatedAt'] == null ? undefined : ((value['updatedAt']).toISOString()),
+        'pickup_window_start': value['pickupWindowStart'],
+        'pickup_window_end': value['pickupWindowEnd'],
+        'donated_at': value['donatedAt'],
+        'created_at': value['createdAt'],
+        'updated_at': value['updatedAt'],
     };
 }
 
