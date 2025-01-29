@@ -18,6 +18,8 @@ export interface TicketWithDonation extends Omit<BaseTicket, 'created_at'> {
     donor: {
       organizationName: string;
       locationId?: string;
+      phone?: string;
+      email?: string;
     };
     notes?: string;
   };
