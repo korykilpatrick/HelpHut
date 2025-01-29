@@ -23,6 +23,12 @@ type Donation = {
   isFragile: boolean;
   requiresHeavyLifting: boolean;
   notes?: string;
+  ticket: {
+    id: string;
+    status: string;
+    volunteerId?: string;
+    volunteerName?: string;
+  };
 };
 
 type Ticket = {
@@ -40,6 +46,16 @@ type Ticket = {
 
 type DbDonation = Database['public']['Tables']['donations']['Row'] & {
   food_type: Database['public']['Tables']['food_types']['Row'] | null;
+  donor: Database['public']['Tables']['donors']['Row'] | null;
+  tickets: Array<Database['public']['Tables']['tickets']['Row'] & {
+    volunteer?: {
+      id: string;
+      user?: {
+        id: string;
+        display_name: string;
+      } | null;
+    } | null;
+  }>;
 };
 
 type DbTicket = Database['public']['Tables']['tickets']['Row'];
@@ -153,7 +169,7 @@ export class PartnersApiImpl extends BaseApiImpl {
       if (error) throw error;
       if (!data) return [];
 
-      return (data as (DbDonation & { food_type: { name: string }; donor: { organization_name: string } })[]).map(row => ({
+      return (data as DbDonation[]).map(row => ({
         id: row.id,
         foodTypeId: row.food_type_id || '',
         foodTypeName: row.food_type?.name || '',
@@ -169,7 +185,13 @@ export class PartnersApiImpl extends BaseApiImpl {
         requiresFreezing: row.requires_freezing,
         isFragile: row.is_fragile,
         requiresHeavyLifting: row.requires_heavy_lifting,
-        notes: row.notes || undefined
+        notes: row.notes || undefined,
+        ticket: {
+          id: row.tickets[0]?.id || '',
+          status: row.tickets[0]?.status || '',
+          volunteerId: row.tickets[0]?.volunteer_id || undefined,
+          volunteerName: row.tickets[0]?.volunteer?.user?.name || undefined
+        }
       }));
     } catch (error) {
       return this.handleError(error);
@@ -199,7 +221,16 @@ export class PartnersApiImpl extends BaseApiImpl {
           *,
           food_type:food_types(*),
           donor:donors(*),
-          tickets!inner(*)
+          tickets!inner(
+            *,
+            volunteer:volunteer_id(
+              id,
+              user:user_id(
+                id,
+                display_name
+              )
+            )
+          )
         `)
         .eq('tickets.partner_org_id', partner.id)
         .order('pickup_window_start', { ascending: true })
@@ -209,7 +240,7 @@ export class PartnersApiImpl extends BaseApiImpl {
       if (error) throw error;
       if (!data) return [];
 
-      return (data as (DbDonation & { food_type: { name: string }; donor: { organization_name: string } })[]).map(row => ({
+      return (data as DbDonation[]).map(row => ({
         id: row.id,
         foodTypeId: row.food_type_id || '',
         foodTypeName: row.food_type?.name || '',
@@ -225,7 +256,13 @@ export class PartnersApiImpl extends BaseApiImpl {
         requiresFreezing: row.requires_freezing,
         isFragile: row.is_fragile,
         requiresHeavyLifting: row.requires_heavy_lifting,
-        notes: row.notes || undefined
+        notes: row.notes || undefined,
+        ticket: {
+          id: row.tickets[0]?.id || '',
+          status: row.tickets[0]?.status || '',
+          volunteerId: row.tickets[0]?.volunteer_id || undefined,
+          volunteerName: row.tickets[0]?.volunteer?.user?.display_name || undefined
+        }
       }));
     } catch (error) {
       return this.handleError(error);

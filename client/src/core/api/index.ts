@@ -131,6 +131,12 @@ interface Donation {
   requiresHeavyLifting: boolean;
   createdAt: string;
   updatedAt: string;
+  ticket: {
+    id: string;
+    status: string;
+    volunteerId?: string;
+    volunteerName?: string;
+  };
 }
 
 interface ClaimTicketResponse {
