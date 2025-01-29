@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequest } from '../middleware/validate';
 import { api } from '../../lib/api/impl';
-import type { DonorCreate, DonorUpdate } from '../../lib/api/generated/api';
+import type { DonorCreate, DonorUpdate } from '../../lib/db/types';
 
 const router = Router();
 
@@ -76,6 +76,20 @@ router.delete('/:id', async (req, res, next) => {
   try {
     await api.donors.deleteDonor(req.params.id);
     res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /donors/:id/donations - List donations for a donor
+router.get('/:id/donations', async (req, res, next) => {
+  try {
+    const { limit = 10, offset = 0 } = req.query;
+    const donations = await api.donations.listDonationsByDonor(req.params.id, {
+      limit: limit ? parseInt(limit as string) : undefined,
+      offset: offset ? parseInt(offset as string) : undefined
+    });
+    res.json(donations);
   } catch (error) {
     next(error);
   }

@@ -1,0 +1,1 @@
+When you identify a problem, add robust logging (including the file path and line number) to the relevant files immediately. After the problem is solved, ask the user if you should remove the logs before proceeding.

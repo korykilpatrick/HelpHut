@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../../core/api';
 import { BaseButton } from '../../../shared/components/base/BaseButton';
-import type { Donation } from '@lib/api/generated/src/models';
+import { useDonorProfile } from '../hooks/useDonorProfile';
 
 interface DashboardMetric {
   label: string;
@@ -24,6 +24,26 @@ interface DashboardMetric {
     value: number;
     isPositive: boolean;
   };
+}
+
+interface DonationWithStatus {
+  id: string;
+  foodTypeId: string;
+  foodTypes: {
+    id: string;
+    name: string;
+  };
+  quantity: number;
+  unit: string;
+  pickupWindowStart: string;
+  pickupWindowEnd: string;
+  createdAt: string;
+  tickets?: Array<{
+    id: string;
+    status: string;
+    volunteerId: string | null;
+    partnerOrgId: string | null;
+  }>;
 }
 
 interface RecentDonation {
@@ -79,23 +99,57 @@ const getStatusColor = (status: string | undefined) => {
   }
 };
 
+const formatPickupWindow = (start: string | null, end: string | null) => {
+  try {
+    if (!start || !end) return 'Not specified';
+    
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return 'Invalid Date';
+    }
+    
+    const formatDateTime = (date: Date) => {
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    };
+
+    return `${formatDateTime(startDate)} - ${formatDateTime(endDate)}`;
+  } catch {
+    return 'Not specified';
+  }
+};
+
 export function DashboardPage() {
   const navigate = useNavigate();
 
+  const { data: donorProfile, isLoading: isDonorLoading } = useDonorProfile();
+
   // Fetch dashboard data
-  const { data: dashboardData, isLoading: isDashboardLoading } = useQuery({
-    queryKey: ['donorDashboard'],
+  const { data: dashboardData, isLoading: isDashboardLoading, error: dashboardError } = useQuery({
+    queryKey: ['donorDashboard', donorProfile?.id],
     queryFn: async () => {
       try {
-        const { data } = await api.donations.getDonations({
-          limit: 0,  // We only need the total count
+        if (!donorProfile?.id) {
+          throw new Error('No donor profile found');
+        }
+
+        const donations = await api.donations.listDonationsByDonor({
+          donorId: donorProfile.id,
+          limit: 0  // We only need the total count
         });
         
         // Calculate metrics from the response
-        const donations = data.donations.donations || [];
         const total = donations.length;
-        const thisMonth = donations.filter((d: Donation) => {
-          const date = new Date(d.createdAt || '');
+        const thisMonth = donations.filter((d: DonationWithStatus) => {
+          const date = new Date(d.createdAt);
           const now = new Date();
           return date.getMonth() === now.getMonth() && 
                  date.getFullYear() === now.getFullYear();
@@ -114,27 +168,89 @@ export function DashboardPage() {
         throw error;
       }
     },
+    enabled: !!donorProfile?.id
   });
 
   // Fetch recent donations
-  const { data: recentDonations, isLoading: isRecentLoading } = useQuery({
-    queryKey: ['donations'],
+  const { data: recentDonations, isLoading: isRecentLoading, error: recentError } = useQuery({
+    queryKey: ['donations', donorProfile?.id],
     queryFn: async () => {
-      const { data } = await api.donations.getDonations({ limit: 5 });
-      return (data.donations.donations || []).map((d: Donation) => ({
-        id: d.id,
-        foodType: {
-          id: d.foodTypeId,
-          name: 'Unknown Food Type' // TODO: Get food type name from API
-        },
-        quantity: d.quantity,
-        unit: d.unit,
-        pickupWindowStart: d.pickupWindowStart,
-        pickupWindowEnd: d.pickupWindowEnd,
-        createdAt: d.createdAt || new Date().toISOString()
-      }));
-    }
+      if (!donorProfile?.id) {
+        throw new Error('No donor profile found');
+      }
+
+      const donations = await api.donations.listDonationsByDonor({
+        donorId: donorProfile.id,
+        limit: 5
+      });
+
+      return donations;
+    },
+    enabled: !!donorProfile?.id
   });
+
+  // Show loading state while fetching donor profile
+  if (isDonorLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  // Show error state if donor profile is not found
+  if (!donorProfile) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h1 className="text-2xl font-bold text-red-500">Error</h1>
+        <p className="mt-2 text-gray-600">Could not load donor profile. Please try again later.</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  // Show loading state while fetching data
+  if (isDashboardLoading || isRecentLoading) {
+    return (
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold mb-8">Donor Dashboard</h1>
+        <div className="animate-pulse">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded-lg"></div>
+            ))}
+          </div>
+          <div className="h-64 bg-gray-200 rounded-lg"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (dashboardError || recentError) {
+    return (
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold mb-8">Donor Dashboard</h1>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h2 className="text-red-700 font-semibold">Error Loading Dashboard</h2>
+          <p className="text-red-600 mt-1">
+            {(dashboardError as Error)?.message || (recentError as Error)?.message || 'An unexpected error occurred'}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const metrics: DashboardMetric[] = [
     {
@@ -257,10 +373,10 @@ export function DashboardPage() {
             <div className="p-4 text-center text-muted-foreground">
               Loading recent donations...
             </div>
-          ) : recentDonations.length > 0 ? (
+          ) : recentDonations && recentDonations.length > 0 ? (
             <div className="divide-y">
-              {recentDonations.map((donation: RecentDonation) => {
-                const StatusIcon = getStatusIcon(donation?.status);
+              {recentDonations.map((donation: DonationWithStatus) => {
+                const StatusIcon = getStatusIcon(donation?.tickets?.[0]?.status);
                 return (
                   <div
                     key={donation.id}
@@ -268,31 +384,31 @@ export function DashboardPage() {
                   >
                     <div className="flex items-center gap-x-4">
                       <StatusIcon
-                        className={`h-5 w-5 ${getStatusColor(donation?.status)}`}
+                        className={`h-5 w-5 ${getStatusColor(donation?.tickets?.[0]?.status)}`}
                       />
                       <div>
                         <p className="font-medium">
-                          {donation.quantity} {donation.unit} of {donation.foodType?.name || 'Unknown Food Type'}
+                          {donation.quantity} {donation.unit} of {donation.foodTypes?.name || 'Unknown Food Type'}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          Created on {formatDate(donation.createdAt)}
+                          Pickup: {formatPickupWindow(donation.pickupWindowStart, donation.pickupWindowEnd)}
                         </p>
                       </div>
                     </div>
                     <div className="text-sm">
                       <span
                         className={`rounded-full px-2 py-1 text-xs font-medium ${
-                          !donation?.status ? 'bg-yellow-100 text-yellow-800' :
-                          donation.status.toLowerCase() === 'completed'
+                          !donation?.tickets?.[0]?.status ? 'bg-yellow-100 text-yellow-800' :
+                          donation.tickets[0].status.toLowerCase() === 'completed'
                             ? 'bg-green-100 text-green-800'
-                            : donation.status.toLowerCase() === 'in_progress'
+                            : donation.tickets[0].status.toLowerCase() === 'in_progress'
                             ? 'bg-blue-100 text-blue-800'
-                            : donation.status.toLowerCase() === 'cancelled'
+                            : donation.tickets[0].status.toLowerCase() === 'cancelled'
                             ? 'bg-red-100 text-red-800'
                             : 'bg-yellow-100 text-yellow-800'
                         }`}
                       >
-                        {donation?.status || 'Pending'}
+                        {donation?.tickets?.[0]?.status || 'Pending'}
                       </span>
                     </div>
                   </div>

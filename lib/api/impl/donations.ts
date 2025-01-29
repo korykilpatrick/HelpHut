@@ -628,4 +628,54 @@ export class DonationsApiImpl extends BaseApiImpl {
       throw error;
     }
   }
+
+  async listDonationsByDonor(donorId: string, params: { limit?: number; offset?: number } = {}): Promise<DbDonation[]> {
+    try {
+      console.log('Listing donations for donor:', donorId, 'with params:', params);
+      
+      let query = this.db
+        .from('donations')
+        .select(`
+          *,
+          food_types (
+            id,
+            name
+          ),
+          tickets (
+            id,
+            status,
+            volunteer_id,
+            partner_org_id
+          )
+        `)
+        .eq('donor_id', donorId)
+        .order('created_at', { ascending: false });
+
+      // Apply pagination
+      if (params.limit) {
+        query = query.limit(params.limit);
+      }
+      if (params.offset) {
+        query = query.range(params.offset, (params.offset + (params.limit || 10)) - 1);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+      if (!data) return [];
+
+      // Log the first result to debug
+      if (data.length > 0) {
+        console.log('Sample donation:', JSON.stringify(data[0], null, 2));
+      }
+
+      return data as DbDonation[];
+    } catch (error) {
+      console.error('Error in listDonationsByDonor:', error);
+      throw error;
+    }
+  }
 } 

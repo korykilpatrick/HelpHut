@@ -5,17 +5,21 @@ import { Input } from '@/shared/components/inputs/Input';
 import { Select } from '@/shared/components/inputs/Select';
 import { Button } from '@/shared/components/buttons/Button';
 import { toast } from '@/shared/components/toast';
+import { useDonorProfile } from '../hooks/useDonorProfile';
 
 type TicketStatus = 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
 
 interface Donation {
   id: string;
   foodTypeId: string;
+  foodTypes: {
+    id: string;
+    name: string;
+  };
   quantity: number;
   unit: string;
-  pickupWindowStart: string;
-  pickupWindowEnd: string;
-  donorId: string;
+  pickupWindowStart: string | null;
+  pickupWindowEnd: string | null;
   createdAt: string;
   updatedAt: string;
   requiresRefrigeration?: boolean;
@@ -23,9 +27,12 @@ interface Donation {
   isFragile?: boolean;
   requiresHeavyLifting?: boolean;
   notes?: string;
-  ticket?: {
-    status: TicketStatus;
-  };
+  tickets?: Array<{
+    id: string;
+    status: string;
+    volunteerId: string | null;
+    partnerOrgId: string | null;
+  }>;
 }
 
 interface StatusOption {
@@ -44,8 +51,8 @@ const statusOptions: StatusOption[] = [
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
-const getStatusStyles = (status: TicketStatus) => {
-  switch (status) {
+const getStatusStyles = (status: string | undefined) => {
+  switch (status?.toLowerCase()) {
     case 'completed':
       return {
         row: 'hover:bg-green-50',
@@ -74,6 +81,35 @@ const getStatusStyles = (status: TicketStatus) => {
   }
 };
 
+// Update the formatPickupWindow function
+const formatPickupWindow = (start: string | null, end: string | null) => {
+  try {
+    if (!start || !end) return 'Not specified';
+    
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return 'Invalid Date';
+    }
+    
+    const formatDateTime = (date: Date) => {
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    };
+
+    return `${formatDateTime(startDate)} - ${formatDateTime(endDate)}`;
+  } catch {
+    return 'Not specified';
+  }
+};
+
 export function DonationListView() {
   const [page, setPage] = React.useState(1);
   const [status, setStatus] = React.useState('all');
@@ -83,17 +119,21 @@ export function DonationListView() {
     end: '',
   });
 
+  const { data: donorProfile, isLoading: isDonorLoading } = useDonorProfile();
+
   // Fetch food types
   const { data: foodTypesData } = useQuery({
     queryKey: ['foodTypes'],
     queryFn: async () => {
       const response = await api.foodTypes.list();
+      console.log('Food types response:', response.data.foodTypes);
       return response.data.foodTypes;
     },
   });
 
   // Create food type map for quick lookups
   const foodTypeMap = React.useMemo(() => {
+    console.log('Creating food type map from:', foodTypesData);
     if (!foodTypesData) return {};
     return foodTypesData.reduce((acc: Record<string, string>, foodType: any) => {
       acc[foodType.id] = foodType.name;
@@ -144,9 +184,13 @@ export function DonationListView() {
 
   // Fetch donations with filters
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['donations', page, status, debouncedSearchQuery, dateRange],
+    queryKey: ['donations', donorProfile?.id, page, status, debouncedSearchQuery, dateRange],
     queryFn: async () => {
       try {
+        if (!donorProfile?.id) {
+          throw new Error('No donor profile found');
+        }
+
         const offset = (page - 1) * ITEMS_PER_PAGE;
         const params = {
           limit: ITEMS_PER_PAGE,
@@ -157,24 +201,28 @@ export function DonationListView() {
           endDate: dateRange.end || undefined,
         };
 
-        const response = await api.donations.getDonations(params);
+        const response = await api.donations.listDonationsByDonor({
+          donorId: donorProfile.id,
+          ...params
+        });
         
         console.log('API response:', response);
 
         // Validate response structure
-        if (!response?.data?.donations?.donations || !Array.isArray(response.data.donations.donations)) {
+        if (!Array.isArray(response)) {
           throw new Error('Invalid response format from server');
         }
 
         return {
-          donations: response.data.donations.donations,
-          total: response.data.donations.total || response.data.donations.donations.length,
+          donations: response,
+          total: response.length,
         };
       } catch (error) {
         console.error('Error fetching donations:', error);
         throw error;
       }
     },
+    enabled: !!donorProfile?.id,
     retry: 1,
     staleTime: 30000,
     refetchOnWindowFocus: false,
@@ -289,21 +337,24 @@ export function DonationListView() {
               </tr>
             ) : data?.donations?.length ? (
               data.donations.map((donation: Donation) => {
-                const statusStyles = getStatusStyles(donation.ticket?.status || 'pending');
+                console.log('Processing donation:', donation);
+                console.log('Food types data for donation:', donation.foodTypes);
+                console.log('Food type name:', donation.foodTypes?.name);
+                const statusStyles = getStatusStyles(donation.tickets?.[0]?.status);
                 return (
                   <tr key={donation.id} className={`${statusStyles.row} transition-colors duration-150`}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {foodTypeMap[donation.foodTypeId] || 'Unknown Food Type'}
+                      {donation.foodTypes?.name || 'Unknown Food Type'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {donation.quantity} {donation.unit}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDate(donation.pickupWindowStart)} - {formatDate(donation.pickupWindowEnd)}
+                      {formatPickupWindow(donation.pickupWindowStart, donation.pickupWindowEnd)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles.badge}`}>
-                        {(donation.ticket?.status || 'pending').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        {(donation.tickets?.[0]?.status || 'Pending')}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

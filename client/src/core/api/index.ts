@@ -177,6 +177,17 @@ export const api = {
       axiosInstance.patch(`/donations/${id}`, data),
     deleteDonation: (id: string) =>
       axiosInstance.delete(`/donations/${id}`),
+    listDonationsByDonor: async (params: { donorId: string; limit?: number; offset?: number }) => {
+      const response = await axiosInstance.get(`/donors/${params.donorId}/donations`, {
+        params: {
+          limit: params.limit,
+          offset: params.offset
+        }
+      });
+      
+      // Let the middleware handle case transformation
+      return response.data;
+    },
   },
   partners: {
     // List available donations
