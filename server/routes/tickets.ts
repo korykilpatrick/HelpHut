@@ -39,12 +39,29 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// POST /tickets - Create ticket
-router.post('/', validateRequest({ body: ticketCreateSchema }), async (req, res, next) => {
+// GET /tickets/details - Get tickets with details and optional filters
+router.get('/details', async (req, res, next) => {
   try {
-    const ticket = await api.tickets.createTicket(req.body);
-    res.status(201).json({ ticket });
+    console.log('Received request for tickets/details');
+    console.log('Query params:', req.query);
+
+    const filters = {
+      volunteerId: req.query.volunteerId as string,
+      partnerId: req.query.partnerId as string,
+      donorId: req.query.donorId as string,
+      status: req.query.status as TicketStatus | TicketStatus[],
+      startDate: req.query.startDate ? new Date(req.query.startDate as string) : undefined,
+      endDate: req.query.endDate ? new Date(req.query.endDate as string) : undefined
+    };
+
+    console.log('Constructed filters:', filters);
+
+    const tickets = await api.tickets.getTicketsWithDetails(filters);
+    console.log(`Found ${tickets.length} tickets`);
+
+    res.json({ tickets });
   } catch (error) {
+    console.error('Error in /tickets/details:', error);
     next(error);
   }
 });
@@ -54,6 +71,16 @@ router.get('/:id', async (req, res, next) => {
   try {
     const ticket = await api.tickets.getTicket(req.params.id);
     res.json({ ticket });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /tickets - Create ticket
+router.post('/', validateRequest({ body: ticketCreateSchema }), async (req, res, next) => {
+  try {
+    const ticket = await api.tickets.createTicket(req.body);
+    res.status(201).json({ ticket });
   } catch (error) {
     next(error);
   }

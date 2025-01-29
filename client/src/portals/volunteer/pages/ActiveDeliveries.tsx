@@ -4,16 +4,32 @@ import { DeliveryCard } from '../components/DeliveryCard';
 import { Ticket, TicketStatus } from '../../../../../lib/types/generated/api';
 import BaseText from '../../../shared/components/base/BaseText';
 import { axiosInstance } from '../../../core/api';
+import { TicketWithDonation } from '../types';
 
 export const ActiveDeliveries: React.FC = () => {
   const queryClient = useQueryClient();
 
-  // Fetch active deliveries
-  const { data: activeDeliveries, isLoading } = useQuery<{ tickets: Ticket[] }>({
+  // Fetch active deliveries with full details in a single query
+  const { data: activeDeliveries, isLoading } = useQuery<{ tickets: TicketWithDonation[] }>({
     queryKey: ['volunteer', 'active-deliveries'],
     queryFn: async () => {
-      const { data } = await axiosInstance.get('/volunteer/tickets/active');
-      return data;
+      console.log('Fetching active deliveries...');
+      try {
+        // Get tickets that belong to this volunteer and are not completed
+        const { data } = await axiosInstance.get<{ tickets: TicketWithDonation[] }>(
+          '/tickets/details', {
+            params: {
+              volunteerId: '66f981b5-0acc-40eb-b0e8-45bb8174c59b', // TODO: Get from auth context
+              status: ['Scheduled', 'InTransit']
+            }
+          }
+        );
+        console.log('Received active deliveries:', data);
+        return data;
+      } catch (error) {
+        console.error('Error fetching active deliveries:', error);
+        throw error;
+      }
     }
   });
 
@@ -30,6 +46,7 @@ export const ActiveDeliveries: React.FC = () => {
   });
 
   const handleStatusUpdate = (ticketId: string, status: TicketStatus) => {
+    if (!ticketId) return;
     updateDeliveryStatus.mutate({ ticketId, status });
   };
 
@@ -59,14 +76,19 @@ export const ActiveDeliveries: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        {activeDeliveries.tickets.map((delivery) => (
-          <DeliveryCard
-            key={delivery.id}
-            ticket={delivery}
-            showActions
-            onStatusUpdate={handleStatusUpdate}
-          />
-        ))}
+        {activeDeliveries.tickets.map((delivery) => {
+          // Skip any deliveries without an ID
+          if (!delivery.id) return null;
+          
+          return (
+            <DeliveryCard
+              key={delivery.id}
+              ticket={delivery}
+              showActions
+              onStatusUpdate={(status) => handleStatusUpdate(delivery.id!, status)}
+            />
+          );
+        })}
       </div>
     </div>
   );
