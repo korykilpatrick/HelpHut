@@ -15,63 +15,54 @@ type UserRole = typeof USER_ROLES[number];
 
 // Login with email and password
 router.post('/login', async (req, res) => {
-  console.log('Received login request:', {
-    ...req.body,
-    password: '[REDACTED]'
-  });
-
-  const { email, password } = req.body;
-  
-  if (!email || !password) {
-    console.log('Missing required fields:', { email: !!email, password: !!password });
-    return res.status(400).json({ error: 'Email and password are required' });
-  }
-
+  console.log('=== Login Request Started ===');
   try {
-    console.log('Attempting Supabase auth login...');
+    const { email, password } = req.body;
+    console.log('-> Authenticating user:', email);
+
     const { data, error } = await supabaseAuth.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
-      console.error('Supabase auth error:', error);
-      throw error;
-    }
-    console.log('Auth successful for user:', { id: data.user.id, email: data.user.email });
+    if (error) throw error;
 
     // Get additional user data
-    console.log('Fetching user profile...');
+    console.log('-> Getting user data for:', data.user.id);
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('*')
       .eq('id', data.user.id)
       .single();
 
-    if (userError) {
-      console.error('Error fetching user profile:', userError);
-      throw userError;
-    }
-    console.log('User profile fetched:', { id: userData.id, role: userData.role });
+    if (userError) throw userError;
+    console.log('-> User data fetched:', userData);
 
     // Get organization data based on role
     let orgData;
     if (userData.role === 'Donor') {
-      console.log('Fetching donor organization data...');
+      console.log('-> Fetching donor organization data');
       const { data: donorData, error: donorError } = await supabase
         .from('donors')
-        .select('*')
+        .select(`
+          id,
+          user_id,
+          organization_name,
+          phone,
+          created_at,
+          updated_at
+        `)
         .eq('user_id', userData.id)
         .single();
       
       if (donorError) {
         if (donorError.code === 'PGRST116') { // Not found
-          console.log('No donor record found, creating placeholder...');
+          console.log('-> No donor record found, creating placeholder...');
           const { data: newDonor, error: createError } = await supabase
             .from('donors')
             .insert({
               user_id: userData.id,
-              organization_name: userData.display_name,
+              organization_name: userData.display_name || 'Unknown Organization',
               phone: '0000000000'
             })
             .select()
@@ -82,14 +73,14 @@ router.post('/login', async (req, res) => {
             throw createError;
           }
           orgData = newDonor;
-          console.log('Created placeholder donor record:', { id: newDonor.id });
+          console.log('-> Created placeholder donor record:', JSON.stringify(orgData, null, 2));
         } else {
           console.error('Error fetching donor data:', donorError);
           throw donorError;
         }
       } else {
         orgData = donorData;
-        console.log('Donor data fetched:', { id: donorData.id, organization: donorData.organization_name });
+        console.log('-> Donor data fetched:', JSON.stringify(orgData, null, 2));
       }
     } else if (userData.role === 'Volunteer') {
       console.log('Fetching volunteer data...');
@@ -149,17 +140,36 @@ router.post('/login', async (req, res) => {
       }
     }
 
-    console.log('Login completed successfully');
-    return res.json({
+    // Get the organization name based on role
+    let organizationName = undefined;
+    if (userData.role === 'Donor' && orgData && 'organization_name' in orgData) {
+      organizationName = orgData.organization_name;
+      console.log('-> Setting donor organization name:', organizationName);
+    } else if (userData.role === 'Partner' && orgData && 'name' in orgData) {
+      organizationName = orgData.name;
+      console.log('-> Setting partner organization name:', organizationName);
+    }
+
+    const response = {
       user: {
         ...data.user,
         ...userData,
-        organization: orgData
+        name: userData.display_name,
+        role: userData.role.toLowerCase(),
+        organizationName,
+        donor: userData.role === 'Donor' ? orgData : undefined,
+        partner: userData.role === 'Partner' ? orgData : undefined,
+        volunteer: userData.role === 'Volunteer' ? orgData : undefined
       },
       session: {
         token: data.session.access_token
       }
-    });
+    };
+
+    console.log('-> Sending login response:', JSON.stringify(response, null, 2));
+    console.log('=== Login Request Completed ===');
+    
+    return res.json(response);
   } catch (error: any) {
     console.error('Login error:', error);
     return res.status(401).json({ error: error.message });
@@ -384,7 +394,14 @@ router.get('/session', async (req, res) => {
     if (userData.role === 'Donor') {
       const { data: donorData, error: donorError } = await supabase
         .from('donors')
-        .select('*')
+        .select(`
+          id,
+          user_id,
+          organization_name,
+          phone,
+          created_at,
+          updated_at
+        `)
         .eq('user_id', userData.id)
         .single();
       
@@ -395,7 +412,7 @@ router.get('/session', async (req, res) => {
             .from('donors')
             .insert({
               user_id: userData.id,
-              organization_name: userData.display_name,
+              organization_name: userData.display_name || 'Unknown Organization',
               phone: '0000000000'
             })
             .select()
@@ -406,26 +423,89 @@ router.get('/session', async (req, res) => {
             throw createError;
           }
           orgData = newDonor;
-          console.log('Created placeholder donor record:', { id: newDonor.id });
         } else {
           console.error('Error fetching donor data:', donorError);
           throw donorError;
         }
       } else {
         orgData = donorData;
-        console.log('Donor data fetched:', { id: donorData.id, organization: donorData.organization_name });
       }
+    } else if (userData.role === 'Partner') {
+      const { data: partnerData, error: partnerError } = await supabase
+        .from('partners')
+        .select('*')
+        .eq('user_id', userData.id)
+        .single();
+      
+      if (partnerError) {
+        if (partnerError.code === 'PGRST116') { // Not found
+          console.log('No partner record found in session, creating placeholder...');
+          if (!session.user.email) {
+            throw new Error('User email is required for partner record');
+          }
+          const partnerInsert = {
+            user_id: userData.id,
+            name: userData.display_name || 'Unknown Organization',
+            contact_email: session.user.email,
+            contact_phone: '0000000000',
+            max_capacity: 0,
+            capacity: 0
+          } as const;
+          const { data: newPartner, error: createError } = await supabase
+            .from('partners')
+            .insert(partnerInsert)
+            .select()
+            .single();
+            
+          if (createError) {
+            console.error('Error creating placeholder partner record:', createError);
+            throw createError;
+          }
+          orgData = newPartner;
+        } else {
+          console.error('Error fetching partner data:', partnerError);
+          throw partnerError;
+        }
+      } else {
+        orgData = partnerData;
+      }
+    } else if (userData.role === 'Volunteer') {
+      const { data: volunteerData, error: volunteerError } = await supabase
+        .from('volunteers')
+        .select('*')
+        .eq('user_id', userData.id)
+        .single();
+      
+      if (volunteerError && volunteerError.code !== 'PGRST116') {
+        console.error('Error fetching volunteer data:', volunteerError);
+        throw volunteerError;
+      }
+      orgData = volunteerData || null;
     }
-    // Add similar blocks for other roles
+
+    // Get the organization name based on role
+    let organizationName = undefined;
+    if (userData.role === 'Donor' && orgData && 'organization_name' in orgData) {
+      organizationName = orgData.organization_name;
+    } else if (userData.role === 'Partner' && orgData && 'name' in orgData) {
+      organizationName = orgData.name;
+    }
+
+    console.log('Organization name fetched:', organizationName);
 
     return res.json({ 
       user: {
         ...session.user,
         ...userData,
-        donor: orgData // Use donor field to match AuthProvider expectations
+        name: userData.display_name,
+        role: userData.role.toLowerCase(),
+        organizationName,
+        donor: userData.role === 'Donor' ? orgData : undefined,
+        partner: userData.role === 'Partner' ? orgData : undefined,
+        volunteer: userData.role === 'Volunteer' ? orgData : undefined
       },
       session: {
-        token: session.access_token // Include the token in the expected format
+        token: session.access_token
       }
     });
   } catch (error: any) {

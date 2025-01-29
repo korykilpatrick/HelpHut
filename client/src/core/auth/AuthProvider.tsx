@@ -14,14 +14,53 @@ const PUBLIC_PATHS = ['/login', '/signup', '/forgot-password'];
 
 // Helper to get organization ID based on role
 const getOrganizationId = (user: any) => {
+  console.log('=== Getting Organization ID ===');
+  console.log('User data for org ID:', user);
+  
+  // First try to get it from the organization field
+  if (user.organization?.id) {
+    console.log('Using organization ID from user:', user.organization.id);
+    return user.organization.id;
+  }
+  
+  // Otherwise try to get it from role-specific data
   switch (user.role.toLowerCase()) {
     case 'donor':
+      console.log('Donor data:', user.donor);
       return user.donor?.id;
     case 'volunteer':
+      console.log('Volunteer data:', user.volunteer);
       return user.volunteer?.id;
     case 'partner':
+      console.log('Partner data:', user.partner);
       return user.partner?.id;
     default:
+      console.log('No matching role for org ID:', user.role);
+      return undefined;
+  }
+};
+
+// Helper to get organization name based on role
+const getOrganizationName = (user: any) => {
+  console.log('=== Getting Organization Name ===');
+  console.log('User data:', user);
+  
+  // First try to get it from the organizationName field
+  if (user.organizationName) {
+    console.log('Using organizationName from user:', user.organizationName);
+    return user.organizationName;
+  }
+  
+  // Otherwise try to get it from role-specific data
+  switch (user.role.toLowerCase()) {
+    case 'donor':
+      console.log('Donor organization name:', user.donor?.organization_name);
+      return user.donor?.organization_name;
+    case 'partner':
+      console.log('Partner organization name:', user.partner?.name);
+      return user.partner?.name;
+    default:
+      console.log('No organization name for role:', user.role);
       return undefined;
   }
 };
@@ -75,15 +114,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const { user } = data;
           
           console.log('-> Session valid, user:', user);
+          console.log('-> Full session response:', JSON.stringify(data, null, 2));
+          
+          const authUser: AuthUser = {
+            id: user.id,
+            email: user.email,
+            role: user.role.toLowerCase(),
+            name: user.name || user.email,
+            organizationId: getOrganizationId(user),
+            organizationName: getOrganizationName(user)
+          };
+
+          console.log('-> Created auth user:', authUser);
           
           setAuthState({
-            user: {
-              id: user.id,
-              email: user.email,
-              role: user.role.toLowerCase(),
-              name: user.name || user.email,
-              organizationId: getOrganizationId(user)
-            },
+            user: authUser,
             isLoading: false
           });
         } else {
@@ -144,15 +189,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const login = async (email: string, password: string) => {
+    console.log('=== Login Started ===');
     setAuthState(prev => ({ ...prev, isLoading: true }));
     try {
+      console.log('-> Making login request');
       const { data } = await api.auth.login(email, password);
       const { user, session } = data;
       
-      console.log('Login response:', data);
+      console.log('-> Login response received');
+      console.log('-> User data:', JSON.stringify(user, null, 2));
+      console.log('-> Session data:', JSON.stringify(session, null, 2));
       
       // Store the session token
-      localStorage.setItem('auth', JSON.stringify({ token: session.token }));
+      const authData = { token: session.token };
+      console.log('-> Storing auth data:', authData);
+      localStorage.setItem('auth', JSON.stringify(authData));
       setAuthToken(session.token);
       
       const authUser: AuthUser = {
@@ -160,13 +211,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: user.email,
         role: user.role.toLowerCase(),
         name: user.name || email,
-        organizationId: getOrganizationId(user)
+        organizationId: getOrganizationId(user),
+        organizationName: getOrganizationName(user)
       };
+      
+      console.log('-> Created auth user:', authUser);
       
       setAuthState({ 
         user: authUser,
         isLoading: false 
       });
+      console.log('=== Login Completed ===');
     } catch (error) {
       console.error('Login error:', error);
       setAuthState({ user: null, isLoading: false, error: 'Login failed' });

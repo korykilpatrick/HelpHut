@@ -163,8 +163,12 @@ export const api = {
       axiosInstance.post('/auth/signup', data),
     logout: () => 
       axiosInstance.post('/auth/logout'),
-    getSession: () => 
-      axiosInstance.get('/auth/session'),
+    getSession: async () => {
+      console.log('=== API getSession Called ===');
+      const response = await axiosInstance.get('/auth/session');
+      console.log('Session response:', JSON.stringify(response.data, null, 2));
+      return response;
+    },
   },
   donations: {
     createDonation: (data: any) => 

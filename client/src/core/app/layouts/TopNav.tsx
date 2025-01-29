@@ -18,7 +18,14 @@ export function TopNav({ className }: TopNavProps) {
   const dispatch = useAppDispatch();
   const { user } = useAuth();
 
+  console.log('=== TopNav Render ===');
+  console.log('User state:', user);
+  console.log('User name:', user?.name);
+  console.log('User organization name:', user?.organizationName);
+  console.log('Full user object:', JSON.stringify(user, null, 2));
+
   if (!user) {
+    console.log('No user found, returning null');
     return null;
   }
 
@@ -50,6 +57,15 @@ export function TopNav({ className }: TopNavProps) {
             name: user.name,
             email: user.email
           }} />
+          <div className="hidden md:flex items-center ml-4 text-sm">
+            <span className="font-medium text-gray-700">{user.name || user.email}</span>
+            {user.organizationName && (
+              <>
+                <span className="mx-2 text-gray-400">•</span>
+                <span className="text-gray-600">{user.organizationName}</span>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </BaseCard>

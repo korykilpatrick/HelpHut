@@ -6,6 +6,7 @@ export interface AuthUser {
   role: UserRole;
   name: string;
   organizationId?: string;
+  organizationName?: string;  // Optional since volunteers won't have one
 }
 
 export interface AuthState {
