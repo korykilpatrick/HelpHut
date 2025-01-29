@@ -378,92 +378,97 @@ export class DonationsApiImpl extends BaseApiImpl {
     try {
       console.log('Fetching available pickups for volunteer:', volunteerId);
 
-      // First, let's check if we have any donations at all
-      const { data: allDonations, error: countError } = await this.db
-        .from('donations')
-        .select('id');
-      
-      console.log('Total donations in system:', allDonations?.length);
-
-      // Now let's check tickets separately
-      const { data: allTickets, error: ticketError } = await this.db
-        .from('tickets')
-        .select('id, status, volunteer_id');
-      
-      console.log('Total tickets in system:', allTickets?.length);
-      console.log('Submitted tickets without volunteer:', 
-        allTickets?.filter(t => t.status === 'Submitted' && !t.volunteer_id).length);
-
-      // Now our main query, but with left joins instead of inner joins
+      // Now let's try our filtered query
       const { data, error } = await this.db
-        .from('donations')
+        .from('tickets')
         .select(`
-          id,
-          food_type_id,
-          quantity,
-          unit,
-          pickup_window_start,
-          pickup_window_end,
-          requires_refrigeration,
-          requires_freezing,
-          requires_heavy_lifting,
-          donors:donor_id (
-            organization_name,
-            location_id
-          ),
-          tickets (
+          donation:donation_id (
             id,
-            status,
-            priority,
-            partner_org_id,
-            dropoff_location_id,
-            partners:partner_org_id (
-              name,
+            food_type_id,
+            quantity,
+            unit,
+            pickup_window_start,
+            pickup_window_end,
+            requires_refrigeration,
+            requires_freezing,
+            requires_heavy_lifting,
+            donors:donor_id (
+              organization_name,
               location_id
             )
+          ),
+          id,
+          status,
+          priority,
+          partner_org_id,
+          dropoff_location_id,
+          partners:partner_org_id (
+            name,
+            location_id
           )
         `)
-        .eq('tickets.status', 'Submitted')
-        .is('tickets.volunteer_id', null)
-        .returns<DonationWithDetails[]>();
+        .eq('status', 'Submitted')
+        .is('volunteer_id', null)
+        .returns<{
+          donation: {
+            id: string;
+            food_type_id: string;
+            quantity: number;
+            unit: string;
+            pickup_window_start: string;
+            pickup_window_end: string;
+            requires_refrigeration: boolean;
+            requires_freezing: boolean;
+            requires_heavy_lifting: boolean;
+            donors: {
+              organization_name: string;
+              location_id: string | null;
+            };
+          };
+          id: string;
+          status: string;
+          priority: string;
+          partner_org_id: string | null;
+          dropoff_location_id: string | null;
+          partners?: { 
+            name: string; 
+            location_id: string | null; 
+          } | null;
+        }[]>();
 
       console.log('Query error:', error);
-      console.log('Returned data:', data);
+      console.log('Filtered tickets:', data);
 
       if (error) throw error;
       if (!data) return [];
 
-      // Filter out any donations without valid tickets
+      // Filter out any invalid entries
       const validPickups = data.filter(d => 
-        d.tickets && 
-        d.tickets.length > 0 && 
-        d.donors // Make sure we have donor info
+        d.donation && 
+        d.donation.donors // Make sure we have donor info
       );
 
       console.log('Valid pickups after filtering:', validPickups.length);
 
-      return validPickups.map(d => {
-        const ticket = d.tickets[0];
-        return {
-          id: ticket.id,
-          donorName: d.donors.organization_name,
-          pickupLocation: 'TODO: Get from donor location_id',
-          deliveryLocation: ticket?.partners?.name || 'Awaiting Partner Assignment',
-          pickupWindow: {
-            start: d.pickup_window_start,
-            end: d.pickup_window_end
-          },
-          foodType: d.food_type_id ?? '',
-          quantity: `${d.quantity} ${d.unit}`,
-          distance: Math.random() * 10,
-          urgency: (ticket?.priority?.toLowerCase() as 'low' | 'medium' | 'high') ?? 'low',
-          requirements: {
-            refrigeration: d.requires_refrigeration,
-            freezing: d.requires_freezing,
-            heavyLifting: d.requires_heavy_lifting
-          }
-        };
-      });
+      return validPickups.map(d => ({
+        id: d.id,
+        donorName: d.donation.donors.organization_name,
+        pickupLocation: 'TODO: Get from donor location_id',
+        deliveryLocation: d.partners?.name || 'Awaiting Partner Assignment',
+        pickupWindow: {
+          start: d.donation.pickup_window_start,
+          end: d.donation.pickup_window_end
+        },
+        foodType: d.donation.food_type_id ?? '',
+        quantity: `${d.donation.quantity} ${d.donation.unit}`,
+        distance: Math.random() * 10,
+        urgency: (d.priority?.toLowerCase() as 'low' | 'medium' | 'high') ?? 'low',
+        requirements: {
+          refrigeration: d.donation.requires_refrigeration,
+          freezing: d.donation.requires_freezing,
+          heavyLifting: d.donation.requires_heavy_lifting
+        }
+      }));
     } catch (error) {
       console.error('Error in listAvailablePickups:', error);
       throw error;
