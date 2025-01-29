@@ -34,6 +34,7 @@ interface Ticket {
     donor: {
       organizationName: string;
       locationId?: string;
+      phone?: string;
     };
     impact?: {
       mealsProvided: number;
@@ -59,6 +60,7 @@ interface TicketWithDetails extends Omit<Ticket, 'donation'> {
     donor: {
       organizationName: string;
       locationId?: string;
+      phone?: string;
     };
     notes?: string;
   };
@@ -320,7 +322,8 @@ export class TicketsApiImpl extends BaseApiImpl {
             ),
             donors (
               organization_name,
-              location_id
+              location_id,
+              phone
             )
           ),
           pickup_locations: locations!tickets_pickup_location_id_fkey (
@@ -379,7 +382,8 @@ export class TicketsApiImpl extends BaseApiImpl {
             },
             donor: {
               organizationName: donation.donors?.organization_name || 'Unknown',
-              locationId: donation.donors?.location_id
+              locationId: donation.donors?.location_id,
+              phone: donation.donors?.phone
             },
             notes: donation.notes
           };
@@ -443,7 +447,8 @@ export class TicketsApiImpl extends BaseApiImpl {
             ),
             donors (
               organization_name,
-              location_id
+              location_id,
+              phone
             )
           ),
           pickup_locations: locations!tickets_pickup_location_id_fkey (
@@ -537,7 +542,8 @@ export class TicketsApiImpl extends BaseApiImpl {
             },
             donor: {
               organizationName: dbTicket.donations.donors?.organization_name || 'Unknown',
-              locationId: dbTicket.donations.donors?.location_id
+              locationId: dbTicket.donations.donors?.location_id,
+              phone: dbTicket.donations.donors?.phone
             },
             notes: dbTicket.donations.notes
           } : undefined,
@@ -609,7 +615,8 @@ export class TicketsApiImpl extends BaseApiImpl {
           },
           donor: {
             organizationName: donation.donors?.organization_name || 'Unknown',
-            locationId: donation.donors?.location_id
+            locationId: donation.donors?.location_id,
+            phone: donation.donors?.phone
           }
         };
       }
