@@ -31,6 +31,11 @@ const formatAddress = (location?: { street?: string; city?: string; state?: stri
 export function DeliveryCard({ ticket, showActions = false, onStatusUpdate }: DeliveryCardProps) {
   const status = statusToVariant[ticket.status || 'Submitted'];
 
+  // Check if we have meaningful donation data
+  const hasMeaningfulDonation = ticket.donation && 
+    ticket.donation.foodType !== "Unknown" && 
+    ticket.donation.quantity !== 0;
+
   return (
     <BaseCard>
       <div className="flex flex-col gap-4">

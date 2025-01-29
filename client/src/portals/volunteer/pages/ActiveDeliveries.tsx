@@ -80,6 +80,8 @@ export const ActiveDeliveries: React.FC = () => {
           // Skip any deliveries without an ID
           if (!delivery.id) return null;
           
+          console.log('Rendering delivery:', delivery);
+          
           return (
             <DeliveryCard
               key={delivery.id}

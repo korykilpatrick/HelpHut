@@ -2,7 +2,7 @@ import { Ticket as BaseTicket } from '@lib/types/generated/api';
 
 export interface TicketWithDonation extends Omit<BaseTicket, 'created_at'> {
   createdAt?: string;
-  donation: {
+  donation?: {
     foodType: string;
     quantity: number;
     unit: string;

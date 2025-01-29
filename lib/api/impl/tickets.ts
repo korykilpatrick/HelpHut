@@ -43,7 +43,7 @@ interface Ticket {
 }
 
 interface TicketWithDetails extends Omit<Ticket, 'donation'> {
-  donation: {
+  donation?: {
     foodType: string;
     quantity: number;
     unit: string;
@@ -60,6 +60,7 @@ interface TicketWithDetails extends Omit<Ticket, 'donation'> {
       organizationName: string;
       locationId?: string;
     };
+    notes?: string;
   };
   pickupLocation?: {
     street?: string;
@@ -379,7 +380,8 @@ export class TicketsApiImpl extends BaseApiImpl {
             donor: {
               organizationName: donation.donors?.organization_name || 'Unknown',
               locationId: donation.donors?.location_id
-            }
+            },
+            notes: donation.notes
           };
         }
       }
@@ -520,41 +522,25 @@ export class TicketsApiImpl extends BaseApiImpl {
         const baseTicket = this.mapDbTicketToTicket(dbTicket);
         const ticket: TicketWithDetails = {
           ...baseTicket,
-          donation: dbTicket.donations?.[0] ? {
-            foodType: dbTicket.donations[0].food_types?.name || 'Unknown',
-            quantity: dbTicket.donations[0].quantity,
-            unit: dbTicket.donations[0].unit,
+          donation: dbTicket.donations ? {
+            foodType: dbTicket.donations.food_types?.name || dbTicket.donations.food_type_id,
+            quantity: dbTicket.donations.quantity,
+            unit: dbTicket.donations.unit,
             pickupWindow: {
-              start: dbTicket.donations[0].pickup_window_start,
-              end: dbTicket.donations[0].pickup_window_end
+              start: dbTicket.donations.pickup_window_start,
+              end: dbTicket.donations.pickup_window_end
             },
             requirements: {
-              refrigeration: dbTicket.donations[0].requires_refrigeration,
-              freezing: dbTicket.donations[0].requires_freezing,
-              heavyLifting: dbTicket.donations[0].requires_heavy_lifting
+              refrigeration: dbTicket.donations.requires_refrigeration,
+              freezing: dbTicket.donations.requires_freezing,
+              heavyLifting: dbTicket.donations.requires_heavy_lifting
             },
             donor: {
-              organizationName: dbTicket.donations[0].donors?.organization_name || 'Unknown',
-              locationId: dbTicket.donations[0].donors?.location_id
-            }
-          } : {
-            foodType: 'Unknown',
-            quantity: 0,
-            unit: '',
-            pickupWindow: {
-              start: '',
-              end: ''
+              organizationName: dbTicket.donations.donors?.organization_name || 'Unknown',
+              locationId: dbTicket.donations.donors?.location_id
             },
-            requirements: {
-              refrigeration: false,
-              freezing: false,
-              heavyLifting: false
-            },
-            donor: {
-              organizationName: 'Unknown',
-              locationId: undefined
-            }
-          },
+            notes: dbTicket.donations.notes
+          } : undefined,
           pickupLocation: dbTicket.pickup_locations ? {
             street: dbTicket.pickup_locations.street ?? undefined,
             city: dbTicket.pickup_locations.city ?? undefined,
