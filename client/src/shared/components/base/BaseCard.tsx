@@ -3,13 +3,14 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/utils/cn';
 
 const cardVariants = cva(
-  'rounded-lg bg-white shadow-sm transition-shadow',
+  'rounded-lg bg-card text-card-foreground transition-all duration-200',
   {
     variants: {
       variant: {
-        default: 'border border-gray-200',
-        elevated: 'shadow-md hover:shadow-lg',
+        default: 'border border-border shadow-soft-sm hover:shadow-soft-md',
+        elevated: 'shadow-soft-md hover:shadow-soft-lg hover:-translate-y-0.5',
         ghost: 'shadow-none border-0',
+        glass: 'glass-panel shadow-soft-sm',
       },
       padding: {
         none: '',
@@ -68,7 +69,6 @@ const BaseCard = React.forwardRef<HTMLDivElement, BaseCardProps>(
   (
     {
       className,
-      children,
       variant,
       padding,
       header,
@@ -77,51 +77,45 @@ const BaseCard = React.forwardRef<HTMLDivElement, BaseCardProps>(
       footerClassName,
       contentClassName,
       noDivider = false,
+      children,
       ...props
     },
     ref
   ) => {
-    const hasHeader = Boolean(header);
-    const hasFooter = Boolean(footer);
-    const showDividers = !noDivider && (hasHeader || hasFooter);
-
     return (
       <div
         ref={ref}
-        className={cn(cardVariants({ variant, padding: 'none', className }))}
+        className={cn(cardVariants({ variant, padding, className }))}
         {...props}
       >
         {header && (
-          <div
-            className={cn(
-              headerVariants({ padding }),
-              showDividers && 'border-b border-gray-200',
-              headerClassName
-            )}
-          >
-            {header}
-          </div>
+          <>
+            <div
+              className={cn(
+                headerVariants({ padding }),
+                'font-medium',
+                headerClassName
+              )}
+            >
+              {header}
+            </div>
+            {!noDivider && <div className="border-b border-border" />}
+          </>
         )}
-        
-        <div
-          className={cn(
-            padding && padding !== 'none' ? headerVariants({ padding }) : '',
-            contentClassName
-          )}
-        >
-          {children}
-        </div>
-
+        <div className={cn('', contentClassName)}>{children}</div>
         {footer && (
-          <div
-            className={cn(
-              footerVariants({ padding }),
-              showDividers && 'border-t border-gray-200',
-              footerClassName
-            )}
-          >
-            {footer}
-          </div>
+          <>
+            {!noDivider && <div className="border-t border-border" />}
+            <div
+              className={cn(
+                footerVariants({ padding }),
+                'text-sm text-muted-foreground',
+                footerClassName
+              )}
+            >
+              {footer}
+            </div>
+          </>
         )}
       </div>
     );
