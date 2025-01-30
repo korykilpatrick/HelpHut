@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "NODE_OPTIONS='-r tsconfig-paths/register' nodemon --watch server --watch lib --ext ts,json --exec 'tsx' server/index.ts",
     "dev:client": "cd client && vite",
-    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "build": "vite build && npm run build:server",
+    "build:client": "vite build",
+    "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist/server",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
     "generate:api": "openapi-generator-cli generate -i docs/planning/openapi.yaml -g typescript-fetch -o lib/api/generated --additional-properties=supportsES6=true,npmName=@helphut/api,withInterfaces=true",
@@ -54,6 +56,7 @@
     "@types/bcrypt": "^5.0.2",
     "@types/lodash-es": "^4.17.12",
     "@types/react-router-dom": "^5.3.3",
+    "aws-amplify": "^6.12.2",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "class-variance-authority": "^0.7.0",
@@ -90,6 +93,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@aws-amplify/backend": "^1.14.0",
+    "@aws-amplify/backend-cli": "^1.4.8",
     "@openapitools/openapi-generator-cli": "^2.16.2",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
     "@tailwindcss/typography": "^0.5.15",
@@ -104,13 +109,16 @@
     "@types/ws": "^8.5.13",
     "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
-    "esbuild": "^0.24.0",
+    "aws-cdk": "^2.177.0",
+    "aws-cdk-lib": "^2.177.0",
+    "constructs": "^10.4.2",
+    "esbuild": "^0.24.2",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "tsx": "^4.19.1",
-    "typescript": "^5.6.3",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
     "vite": "^5.4.9"
   },
   "optionalDependencies": {
