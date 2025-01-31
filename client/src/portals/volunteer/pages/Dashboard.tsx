@@ -7,6 +7,7 @@ import BaseText from '../../../shared/components/base/BaseText';
 import BaseCard from '../../../shared/components/base/BaseCard';
 import { BaseButton } from '../../../shared/components/base/BaseButton';
 import { axiosInstance } from '../../../core/api';
+import { Truck, Package, Users } from 'lucide-react';
 
 interface DashboardStats {
   totalDeliveries: number;
@@ -67,19 +68,49 @@ export const Dashboard: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <BaseCard className="p-4">
-          <BaseText size="sm" className="text-gray-600">Total Deliveries</BaseText>
-          <BaseText size="2xl" weight="bold">{stats?.totalDeliveries || 0}</BaseText>
+        <BaseCard className="p-6 hover:shadow-md transition-all duration-200">
+          <div className="flex items-start justify-between">
+            <div>
+              <BaseText size="sm" className="text-gray-500 mb-1">Total Deliveries</BaseText>
+              <div className="flex items-baseline gap-1">
+                <BaseText size="3xl" weight="bold" className="text-gray-900">{stats?.totalDeliveries || 0}</BaseText>
+                <BaseText size="sm" className="text-gray-500">deliveries</BaseText>
+              </div>
+            </div>
+            <div className="rounded-full bg-blue-100 p-3">
+              <Truck className="h-6 w-6 text-blue-600" />
+            </div>
+          </div>
         </BaseCard>
 
-        <BaseCard className="p-4">
-          <BaseText size="sm" className="text-gray-600">Pounds Rescued</BaseText>
-          <BaseText size="2xl" weight="bold">{stats?.impactMetrics.poundsRescued || 0}</BaseText>
+        <BaseCard className="p-6 hover:shadow-md transition-all duration-200">
+          <div className="flex items-start justify-between">
+            <div>
+              <BaseText size="sm" className="text-gray-500 mb-1">Pounds Rescued</BaseText>
+              <div className="flex items-baseline gap-1">
+                <BaseText size="3xl" weight="bold" className="text-gray-900">{stats?.impactMetrics.poundsRescued || 0}</BaseText>
+                <BaseText size="sm" className="text-gray-500">lbs</BaseText>
+              </div>
+            </div>
+            <div className="rounded-full bg-green-100 p-3">
+              <Package className="h-6 w-6 text-green-600" />
+            </div>
+          </div>
         </BaseCard>
 
-        <BaseCard className="p-4">
-          <BaseText size="sm" className="text-gray-600">Meals Provided</BaseText>
-          <BaseText size="2xl" weight="bold">{stats?.impactMetrics.mealsProvided || 0}</BaseText>
+        <BaseCard className="p-6 hover:shadow-md transition-all duration-200">
+          <div className="flex items-start justify-between">
+            <div>
+              <BaseText size="sm" className="text-gray-500 mb-1">Meals Provided</BaseText>
+              <div className="flex items-baseline gap-1">
+                <BaseText size="3xl" weight="bold" className="text-gray-900">{stats?.impactMetrics.mealsProvided || 0}</BaseText>
+                <BaseText size="sm" className="text-gray-500">meals</BaseText>
+              </div>
+            </div>
+            <div className="rounded-full bg-purple-100 p-3">
+              <Users className="h-6 w-6 text-purple-600" />
+            </div>
+          </div>
         </BaseCard>
       </div>
 

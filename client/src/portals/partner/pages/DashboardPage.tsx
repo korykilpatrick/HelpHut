@@ -12,7 +12,8 @@ import {
   Bell,
   BarChart2,
   PieChart,
-  LineChart
+  LineChart,
+  Box
 } from 'lucide-react';
 import { api } from '../../../core/api';
 import BaseCard from '../../../shared/components/base/BaseCard';
@@ -184,186 +185,187 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 px-4">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Partner Dashboard</h1>
-        <p className="mt-2 text-muted-foreground">
+        <h1 className="text-3xl font-bold text-gray-900">Partner Dashboard</h1>
+        <p className="mt-2 text-gray-600">
           View available donations and manage deliveries
         </p>
       </div>
 
-      {/* Quick Actions */}
-      <div className="mb-8 flex gap-4">
-        <BaseButton
-          variant="default"
-          size="lg"
+      {/* Action Buttons */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <BaseButton 
+          className="w-full py-3 text-center flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white transition-colors"
           onClick={() => navigate('/partner/available-donations')}
-          className="flex-1"
         >
+          <Box className="h-5 w-5" />
           View Available Donations
         </BaseButton>
-        <BaseButton
-          variant="outline"
-          size="lg"
+        <BaseButton 
+          className="w-full py-3 text-center flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white transition-colors"
           onClick={() => navigate('/partner/inventory')}
-          className="flex-1"
         >
+          <Warehouse className="h-5 w-5" />
           Update Inventory
         </BaseButton>
       </div>
 
-      {/* Metrics Grid */}
-      <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {metrics.map((metric) => {
-          const Icon = metric.icon;
-          return (
-            <BaseCard
-              key={metric.label}
-              variant="elevated"
-              padding="lg"
-              className="text-center"
-            >
-              <div className="mb-4 flex justify-center">
-                <div className="rounded-full bg-primary/10 p-3">
-                  <Icon className="h-6 w-6 text-primary" />
-                </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <BaseCard className="p-6 hover:shadow-md transition-all duration-200">
+          <div className="flex items-start justify-between">
+            <div>
+              <BaseText size="sm" className="text-gray-500 mb-1">Available Donations</BaseText>
+              <div className="flex items-baseline gap-1">
+                <BaseText size="3xl" weight="bold" className="text-gray-900">5</BaseText>
+                <BaseText size="sm" className="text-gray-500">items</BaseText>
               </div>
-              <BaseText size="3xl" weight="bold">
-                {metric.value}
-              </BaseText>
-              <BaseText variant="muted" size="sm" className="mt-1">
-                {metric.label}
-              </BaseText>
-              <BaseText variant="muted" size="xs" className="mt-0.5">
-                {metric.description}
-              </BaseText>
-            </BaseCard>
-          );
-        })}
+              <BaseText size="xs" className="text-gray-500 mt-1">Unclaimed donations</BaseText>
+            </div>
+            <div className="rounded-full bg-blue-100 p-3">
+              <Box className="h-6 w-6 text-blue-600" />
+            </div>
+          </div>
+        </BaseCard>
+
+        <BaseCard className="p-6 hover:shadow-md transition-all duration-200">
+          <div className="flex items-start justify-between">
+            <div>
+              <BaseText size="sm" className="text-gray-500 mb-1">Inventory Items</BaseText>
+              <div className="flex items-baseline gap-1">
+                <BaseText size="3xl" weight="bold" className="text-gray-900">128</BaseText>
+                <BaseText size="sm" className="text-gray-500">items</BaseText>
+              </div>
+              <BaseText size="xs" className="text-gray-500 mt-1">Current stock items</BaseText>
+            </div>
+            <div className="rounded-full bg-green-100 p-3">
+              <Warehouse className="h-6 w-6 text-green-600" />
+            </div>
+          </div>
+        </BaseCard>
+
+        <BaseCard className="p-6 hover:shadow-md transition-all duration-200">
+          <div className="flex items-start justify-between">
+            <div>
+              <BaseText size="sm" className="text-gray-500 mb-1">Upcoming Deliveries</BaseText>
+              <div className="flex items-baseline gap-1">
+                <BaseText size="3xl" weight="bold" className="text-gray-900">3</BaseText>
+                <BaseText size="sm" className="text-gray-500">scheduled</BaseText>
+              </div>
+              <BaseText size="xs" className="text-gray-500 mt-1">Scheduled deliveries</BaseText>
+            </div>
+            <div className="rounded-full bg-yellow-100 p-3">
+              <Calendar className="h-6 w-6 text-yellow-600" />
+            </div>
+          </div>
+        </BaseCard>
+
+        <BaseCard className="p-6 hover:shadow-md transition-all duration-200">
+          <div className="flex items-start justify-between">
+            <div>
+              <BaseText size="sm" className="text-gray-500 mb-1">Impact Score</BaseText>
+              <div className="flex items-baseline gap-1">
+                <BaseText size="3xl" weight="bold" className="text-gray-900">92</BaseText>
+                <BaseText size="sm" className="text-gray-500">points</BaseText>
+              </div>
+              <BaseText size="xs" className="text-gray-500 mt-1">Community impact rating</BaseText>
+            </div>
+            <div className="rounded-full bg-purple-100 p-3">
+              <TrendingUp className="h-6 w-6 text-purple-600" />
+            </div>
+          </div>
+        </BaseCard>
       </div>
 
       {/* Analytics Section */}
       <div className="mb-8">
         <div className="mb-6">
-          <h2 className="text-2xl font-semibold">Analytics & Insights</h2>
-          <p className="text-muted-foreground">Track your impact and optimize operations</p>
+          <h2 className="text-2xl font-semibold text-gray-900">Analytics & Insights</h2>
+          <p className="text-gray-600">Track your impact and optimize operations</p>
         </div>
         
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Food Distribution Trends */}
-          <BaseCard
-            header={
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">Food Distribution</h3>
-                  <p className="text-sm text-muted-foreground">Monthly distribution trends</p>
-                </div>
-                <LineChart className="h-5 w-5 text-muted-foreground" />
+          <BaseCard className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Food Distribution</h3>
+                <p className="text-sm text-gray-600">Monthly distribution trends</p>
               </div>
-            }
-          >
+              <div className="rounded-full bg-blue-100 p-2">
+                <LineChart className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
             <div className="h-64 w-full">
               {/* TODO: Add actual chart component */}
-              <div className="flex h-full items-center justify-center text-muted-foreground">
+              <div className="flex h-full items-center justify-center text-gray-500 bg-gray-50 rounded-lg border border-gray-100">
                 Chart placeholder: Line chart showing distribution over time
               </div>
             </div>
           </BaseCard>
 
           {/* Most Needed Items */}
-          <BaseCard
-            header={
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">Most Needed Items</h3>
-                  <p className="text-sm text-muted-foreground">Popular items this month</p>
-                </div>
-                <PieChart className="h-5 w-5 text-muted-foreground" />
+          <BaseCard className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Most Needed Items</h3>
+                <p className="text-sm text-gray-600">Popular items this month</p>
               </div>
-            }
-          >
-            <div className="space-y-4">
-              {dashboardData?.analytics.topRequests.map((item) => (
-                <div key={item.item} className="flex items-center justify-between">
-                  <BaseText>{item.item}</BaseText>
-                  <div className="flex items-center gap-4">
-                    <div className="h-2 w-32 overflow-hidden rounded-full bg-muted">
-                      <div 
-                        className="h-full bg-primary" 
-                        style={{ 
-                          width: `${(item.count / Math.max(...dashboardData.analytics.topRequests.map(i => i.count))) * 100}%` 
-                        }} 
-                      />
-                    </div>
-                    <BaseText variant="muted">{item.count}</BaseText>
-                  </div>
-                </div>
-              ))}
+              <div className="rounded-full bg-green-100 p-2">
+                <PieChart className="h-5 w-5 text-green-600" />
+              </div>
             </div>
-          </BaseCard>
-
-          {/* Donor Contributions */}
-          <BaseCard
-            header={
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">Top Donors</h3>
-                  <p className="text-sm text-muted-foreground">Largest contributors</p>
-                </div>
-                <BarChart2 className="h-5 w-5 text-muted-foreground" />
-              </div>
-            }
-          >
             <div className="space-y-4">
-              {dashboardData?.analytics.donorStats.map((stat) => (
-                <div key={stat.donor} className="flex items-center justify-between">
-                  <BaseText>{stat.donor}</BaseText>
-                  <div className="flex items-center gap-4">
-                    <div className="h-2 w-32 overflow-hidden rounded-full bg-muted">
-                      <div 
-                        className="h-full bg-primary" 
-                        style={{ 
-                          width: `${(stat.contributions / Math.max(...dashboardData.analytics.donorStats.map(s => s.contributions))) * 100}%` 
-                        }} 
-                      />
-                    </div>
-                    <BaseText variant="muted">{stat.contributions} lbs</BaseText>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </BaseCard>
-
-          {/* Impact Metrics */}
-          <BaseCard
-            header={
               <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">Impact Metrics</h3>
-                  <p className="text-sm text-muted-foreground">Your community impact</p>
-                </div>
-                <TrendingUp className="h-5 w-5 text-muted-foreground" />
-              </div>
-            }
-          >
-            <div className="space-y-4">
-              {dashboardData?.analytics.impactMetrics.map((metric) => (
-                <div key={metric.metric} className="flex items-center justify-between">
-                  <div>
-                    <BaseText>{metric.metric}</BaseText>
-                    <BaseText size="2xl" weight="bold" className="mt-1">
-                      {metric.value.toLocaleString()}
-                    </BaseText>
+                <BaseText className="text-gray-900 font-medium">Fresh Produce</BaseText>
+                <div className="flex items-center gap-4">
+                  <div className="h-2 w-32 overflow-hidden rounded-full bg-gray-100">
+                    <div 
+                      className="h-full bg-blue-500 transition-all duration-300" 
+                      style={{ width: '100%' }}
+                    />
                   </div>
-                  <BaseBadge 
-                    variant={metric.change > 0 ? 'success' : 'error'}
-                    icon={<TrendingUp className="h-3.5 w-3.5" />}
-                  >
-                    {metric.change > 0 ? '+' : ''}{metric.change}%
-                  </BaseBadge>
+                  <BaseText className="text-gray-600 min-w-[2rem] text-right">45</BaseText>
                 </div>
-              ))}
+              </div>
+              <div className="flex items-center justify-between">
+                <BaseText className="text-gray-900 font-medium">Canned Goods</BaseText>
+                <div className="flex items-center gap-4">
+                  <div className="h-2 w-32 overflow-hidden rounded-full bg-gray-100">
+                    <div 
+                      className="h-full bg-blue-500 transition-all duration-300" 
+                      style={{ width: '71%' }}
+                    />
+                  </div>
+                  <BaseText className="text-gray-600 min-w-[2rem] text-right">32</BaseText>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <BaseText className="text-gray-900 font-medium">Dairy Products</BaseText>
+                <div className="flex items-center gap-4">
+                  <div className="h-2 w-32 overflow-hidden rounded-full bg-gray-100">
+                    <div 
+                      className="h-full bg-blue-500 transition-all duration-300" 
+                      style={{ width: '62%' }}
+                    />
+                  </div>
+                  <BaseText className="text-gray-600 min-w-[2rem] text-right">28</BaseText>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <BaseText className="text-gray-900 font-medium">Bread</BaseText>
+                <div className="flex items-center gap-4">
+                  <div className="h-2 w-32 overflow-hidden rounded-full bg-gray-100">
+                    <div 
+                      className="h-full bg-blue-500 transition-all duration-300" 
+                      style={{ width: '56%' }}
+                    />
+                  </div>
+                  <BaseText className="text-gray-600 min-w-[2rem] text-right">25</BaseText>
+                </div>
+              </div>
             </div>
           </BaseCard>
         </div>
