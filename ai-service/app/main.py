@@ -1,25 +1,11 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from app.endpoints import chat, donation
 
-app = FastAPI(
-    title="HelpHut AI Service",
-    description="AI Service for HelpHut platform",
-    version="0.1.0"
-)
+app = FastAPI(title="AI Service")
 
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.include_router(chat.router)
+app.include_router(donation.router)
 
-@app.get("/")
-async def root():
-    return {"message": "Welcome to HelpHut AI Service"}
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

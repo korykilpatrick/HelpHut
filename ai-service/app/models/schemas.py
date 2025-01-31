@@ -568,3 +568,27 @@ class VolunteersUpdate(BaseModel):
     updated_at: Optional[datetime] = None
     user_id: Optional[str] = None
     vehicle_type: Optional[str] = None
+
+# -------------------------
+# Donation Auto-Population Models
+# -------------------------
+class Quantity(BaseModel):
+    amount: float
+    unit: str
+
+class PickupWindow(BaseModel):
+    startTime: datetime
+    endTime: datetime
+
+class HandlingRequirements(BaseModel):
+    refrigeration: bool
+    freezing: bool
+    fragile: bool
+    heavyLifting: bool
+
+class DonationDetails(BaseModel):
+    food_type: str
+    quantity: Quantity
+    pickup_window: PickupWindow
+    handling: HandlingRequirements
+    notes: Optional[str] = None

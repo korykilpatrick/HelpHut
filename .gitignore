@@ -1,3 +1,4 @@
+# Node.js
 node_modules
 dist
 .DS_Store
@@ -5,12 +6,38 @@ server/public
 vite.config.ts.*
 *.tar.gz
 
+# Environment variables
 .env
+.env.*
 
+# Python
 ai-service/venv/
-# other python things
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.pyo
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.python-version
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.pytest_cache/
