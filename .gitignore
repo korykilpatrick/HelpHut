@@ -6,3 +6,11 @@ vite.config.ts.*
 *.tar.gz
 
 .env
+
+venv/
+# other python things
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyo
