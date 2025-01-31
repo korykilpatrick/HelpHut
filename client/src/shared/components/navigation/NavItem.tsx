@@ -20,10 +20,10 @@ export const NavItem = React.forwardRef<HTMLAnchorElement, NavItemProps>(
         ref={ref}
         to={to}
         className={cn(
-          'group flex items-center gap-x-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+          'group flex items-center gap-x-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
           isActive
-            ? 'bg-accent text-accent-foreground'
-            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+            ? 'bg-blue-50 text-blue-700 shadow-sm'
+            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
           level > 0 && 'ml-6',
           className
         )}
@@ -32,8 +32,8 @@ export const NavItem = React.forwardRef<HTMLAnchorElement, NavItemProps>(
         {Icon && (
           <Icon
             className={cn(
-              'h-4 w-4',
-              isActive ? 'text-accent-foreground' : 'text-muted-foreground group-hover:text-accent-foreground'
+              'h-5 w-5 flex-shrink-0 transition-colors duration-200',
+              isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
             )}
           />
         )}
@@ -41,10 +41,10 @@ export const NavItem = React.forwardRef<HTMLAnchorElement, NavItemProps>(
         {badge && (
           <span
             className={cn(
-              'ml-auto rounded-full px-2 py-0.5 text-xs font-medium',
+              'ml-auto rounded-full px-2 py-0.5 text-xs font-medium transition-colors duration-200',
               isActive
-                ? 'bg-accent-foreground/10 text-accent-foreground'
-                : 'bg-muted text-muted-foreground group-hover:bg-accent-foreground/10 group-hover:text-accent-foreground'
+                ? 'bg-blue-100 text-blue-700'
+                : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-900'
             )}
           >
             {badge}
@@ -53,8 +53,8 @@ export const NavItem = React.forwardRef<HTMLAnchorElement, NavItemProps>(
         {hasChildren && (
           <svg
             className={cn(
-              'h-4 w-4 transition-transform',
-              isActive ? 'text-accent-foreground' : 'text-muted-foreground group-hover:text-accent-foreground',
+              'h-4 w-4 transition-transform duration-200',
+              isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600',
               hasChildren && 'rotate-180'
             )}
             xmlns="http://www.w3.org/2000/svg"

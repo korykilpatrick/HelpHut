@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { cn } from '../../utils/cn';
 import { useAppSelector } from '../../store/hooks';
 import { NavItem } from '../../../shared/components/navigation/NavItem';
@@ -48,6 +48,7 @@ const portalConfigs: Record<'donor' | 'volunteer' | 'partner', PortalConfig> = {
 export function Sidebar({ className }: SidebarProps) {
   const location = useLocation();
   const { user } = useAuth();
+  const [imageError, setImageError] = React.useState(false);
   
   const portalConfig = user && (user.role === 'donor' || user.role === 'volunteer' || user.role === 'partner') 
     ? portalConfigs[user.role] 
@@ -56,10 +57,18 @@ export function Sidebar({ className }: SidebarProps) {
   const groupedFeatures = groupFeatures(features);
 
   return (
-    <aside className={cn('flex flex-col gap-y-4 p-4', className)}>
-      <div className="flex h-12 items-center px-2">
-        <span className="text-xl font-bold">HelpHut</span>
-      </div>
+    <aside className={cn('flex flex-col gap-y-6 p-4', className)}>
+      <Link to="/" className="flex h-24 items-center justify-center px-4 py-2">
+        <img 
+          src="/helphut_logo.png"
+          alt="HelpHut Logo" 
+          className="h-20 w-auto"
+          onError={(e) => {
+            console.error('Failed to load sidebar logo:', e);
+            setImageError(true);
+          }}
+        />
+      </Link>
 
       <nav className="flex flex-1 flex-col gap-y-6">
         {groupedFeatures.map(([section, items]) => (

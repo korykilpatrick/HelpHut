@@ -39,6 +39,7 @@ const portals = [
 export function HomePage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const [imageError, setImageError] = React.useState(false);
 
   const handlePortalSelect = (portalId: NavigationState['currentPortal'], path: string) => {
     dispatch(setCurrentPortal(portalId));
@@ -48,7 +49,17 @@ export function HomePage() {
   return (
     <div className="min-h-screen bg-background px-4 py-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-8 text-center">
+        <div className="mb-12 text-center">
+          <img 
+            src="/helphut_logo.png"
+            alt="HelpHut Logo" 
+            className="mx-auto h-32 w-auto mb-8"
+            onError={(e) => {
+              console.error('Failed to load logo:', e);
+              setImageError(true);
+            }}
+          />
+          {imageError && <div className="text-destructive mb-4">Failed to load logo</div>}
           <h1 className="text-4xl font-bold tracking-tight">Welcome to HelpHut</h1>
           <p className="mt-2 text-lg text-muted-foreground">
             Select a portal to get started
