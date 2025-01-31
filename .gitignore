@@ -7,7 +7,7 @@ vite.config.ts.*
 
 .env
 
-venv/
+ai-service/venv/
 # other python things
 __pycache__/
 *.pyc
