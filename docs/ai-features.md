@@ -72,22 +72,39 @@ The system should extract:
 ```
 
 ### Technical Requirements
-1. LangChain Components:
+1. Python AI Service:
+   - FastAPI server with CORS support
+   - Separate deployment from main Express backend
+   - JSON response format matching TypeScript types
+   - Error handling with standard HTTP status codes
+
+2. LangChain Components:
    - Structured output parser
    - Custom prompt template
    - Output validation
+   - Chat memory management
+   - Vector storage (if needed)
 
-2. Integration Points:
-   - Donation form component
+3. Integration Points:
+   - Frontend API client for AI endpoints
    - Form field mapping
    - Validation system
    - Error handling
+   - Type definitions shared between Python and TypeScript
 
-3. Edge Cases:
+4. Edge Cases:
    - Ambiguous quantities
    - Multiple food items
    - Unclear timing
    - Missing required information
+   - AI service timeout handling
+   - Rate limiting
+
+5. Development Setup:
+   - Local Python environment
+   - FastAPI development server
+   - Environment variables for service URLs
+   - Docker configuration (optional)
 
 ## 2. Contextual Chat Assistant
 
@@ -152,8 +169,9 @@ Partner Queries:
 ### Technical Requirements
 
 1. Core Components:
-   - Chat interface
-   - Message history management
+   - FastAPI Python service
+   - Chat interface (React)
+   - Message history management (Python/LangChain)
    - Role-based access control
    - Action executor
    - Response generator
@@ -164,3 +182,20 @@ Partner Queries:
    - Form operations
    - Notification system
    - Analytics system
+   - WebSocket support (optional for real-time chat)
+
+3. Python Service Architecture:
+   - FastAPI routes for chat operations
+   - LangChain chat memory management
+   - Action handlers for different user roles
+   - Type definitions matching TypeScript
+   - Error handling and validation
+
+4. Security Considerations:
+   - Authentication validation
+   - Action authorization
+   - Data access controls
+   - Input sanitization
+   - Rate limiting
+   - API key management
+   - CORS configuration
