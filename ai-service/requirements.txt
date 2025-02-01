@@ -9,3 +9,4 @@ langsmith
 openai
 pydantic
 pydantic-settings
+pytest
