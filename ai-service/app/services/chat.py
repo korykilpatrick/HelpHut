@@ -1,3 +1,5 @@
+# File: app/services/chat.py
+
 from app.config import settings
 from langchain_openai import ChatOpenAI 
 from langchain.schema import HumanMessage, AIMessage
@@ -10,7 +12,7 @@ conversation_history = []
 
 async def get_chat_response(message: str) -> str:
     global conversation_history
-    # Append the user’s message.
+    # Append the user's message.
     conversation_history.append(HumanMessage(content=message))
     # Get the AI response asynchronously.
     response = await chat_model.ainvoke(conversation_history)

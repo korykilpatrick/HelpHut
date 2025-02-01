@@ -1,3 +1,5 @@
+# File: app/endpoints/chat.py
+
 from fastapi import APIRouter, HTTPException
 from app.services import chat
 
