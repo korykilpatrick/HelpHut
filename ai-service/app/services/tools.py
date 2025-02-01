@@ -1,3 +1,7 @@
+import warnings
+# Suppress beta warnings from the as_tool API (optional)
+warnings.filterwarnings("ignore")
+
 from pydantic import BaseModel
 from langchain_core.runnables import RunnableLambda
 
@@ -12,22 +16,20 @@ class NavigationToolInput(BaseModel):
 class SynthesisToolInput(BaseModel):
     data: dict
 
-# Define the CRUD function.
-def crud_func(args: CRUDToolInput) -> str:
-    # Placeholder: perform a CRUD operation.
-    return f"Performed CRUD operation: {args.operation} with data: {args.data}"
+# Update tool functions to use model_validate instead of parse_obj.
+def crud_func(args: dict) -> str:
+    parsed = CRUDToolInput.model_validate(args)
+    return f"Performed CRUD operation: {parsed.operation} with data: {parsed.data}"
 
-# Wrap the CRUD function as a tool using a Pydantic model for the input.
 crud_tool = RunnableLambda(crud_func).as_tool(
     CRUDToolInput,
     name="crud_tool",
     description="Performs database CRUD operations."
 )
 
-# Define the Navigation function.
-def navigation_func(args: NavigationToolInput) -> str:
-    # Placeholder: help user navigate the website.
-    return f"Navigating to page: {args.page}"
+def navigation_func(args: dict) -> str:
+    parsed = NavigationToolInput.model_validate(args)
+    return f"Navigating to page: {parsed.page}"
 
 navigation_tool = RunnableLambda(navigation_func).as_tool(
     NavigationToolInput,
@@ -35,10 +37,9 @@ navigation_tool = RunnableLambda(navigation_func).as_tool(
     description="Helps users navigate the website."
 )
 
-# Define the Synthesis function.
-def synthesis_func(args: SynthesisToolInput) -> str:
-    # Placeholder: synthesize provided data.
-    return f"Synthesized data from: {args.data}"
+def synthesis_func(args: dict) -> str:
+    parsed = SynthesisToolInput.model_validate(args)
+    return f"Synthesized data from: {parsed.data}"
 
 synthesis_tool = RunnableLambda(synthesis_func).as_tool(
     SynthesisToolInput,

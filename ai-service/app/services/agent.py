@@ -14,7 +14,8 @@ agent_executor = create_react_agent(llm, tools, checkpointer=memory)
 async def get_agent_response(query: str, config: dict) -> str:
     messages = [HumanMessage(content=query)]
     result = await agent_executor.ainvoke({"messages": messages}, config=config)
-    agent_messages = result.get("agent", {}).get("messages", [])
-    if agent_messages:
-        return agent_messages[-1].content
-    return "The agent did not return a response."
+    print("DEBUG: raw agent result:", result)
+    # Now, since the output contains a top-level "messages" list, extract the final message.
+    if "messages" in result and result["messages"]:
+        return result["messages"][-1].content
+    return f"No final agent message; raw result: {result}"
