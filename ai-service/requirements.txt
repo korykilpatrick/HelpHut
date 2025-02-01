@@ -10,3 +10,4 @@ openai
 pydantic
 pydantic-settings
 pytest
+supabase
