@@ -577,8 +577,9 @@ class Quantity(BaseModel):
     unit: str
 
 class PickupWindow(BaseModel):
-    startTime: datetime
-    endTime: datetime
+    startTime: str
+    endTime: str
+
 
 class HandlingRequirements(BaseModel):
     refrigeration: bool
