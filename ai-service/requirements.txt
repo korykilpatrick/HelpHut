@@ -2,6 +2,10 @@ fastapi
 uvicorn
 langchain
 langchain-openai
+langchain-core
+langchain-community
+langgraph
+langsmith
 openai
 pydantic
 pydantic-settings
