@@ -12,3 +12,8 @@ def update_user(user_id: str, user_data: dict):
 def delete_user(user_id: str):
     response = supabase.table("users").delete().eq("id", user_id).execute()
     return response.data
+
+def get_partners():
+    response = supabase.table("partners").select("*").execute()
+    return response.data
+
